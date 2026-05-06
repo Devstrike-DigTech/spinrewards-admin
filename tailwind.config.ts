@@ -40,6 +40,12 @@ const config: Config = {
           DEFAULT: 'hsl(var(--card))',
           foreground: 'hsl(var(--card-foreground))',
         },
+        gold: {
+          DEFAULT: '#C9961A',
+          light: '#D4AB48',
+          dark: '#A17815',
+          foreground: '#ffffff',
+        },
       },
       borderRadius: {
         lg: 'var(--radius)',

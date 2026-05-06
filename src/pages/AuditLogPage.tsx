@@ -1,17 +1,24 @@
+import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { type ColumnDef } from '@tanstack/react-table'
-import { auditLog as auditLogApi } from '@/api/endpoints'
+import { auditLogApi } from '@/api/index'
 import type { AuditLogEntry } from '@/types'
 import { DataTable } from '@/components/DataTable'
+import { Pagination } from '@/components/Pagination'
 import { Badge } from '@/components/ui/badge'
 import { formatDate } from '@/lib/utils'
 
 export function AuditLogPage() {
+  const [page, setPage] = useState(1)
+
   const { data, isLoading } = useQuery({
-    queryKey: ['audit-log'],
-    queryFn: () => auditLogApi.list(),
+    queryKey: ['audit-log', page],
+    queryFn: () => auditLogApi.list({ page }),
     refetchInterval: 30_000,
   })
+
+  const PAGE_SIZE = 10
+  const totalPages = data ? Math.ceil(data.count / PAGE_SIZE) : 1
 
   const columns: ColumnDef<AuditLogEntry>[] = [
     {
@@ -27,7 +34,7 @@ export function AuditLogPage() {
       accessorKey: 'admin_user',
       header: 'Admin',
       cell: ({ getValue }) => (
-        <span className="font-medium">{getValue<string>()}</span>
+        <span className="font-medium text-sm">{getValue<string>()}</span>
       ),
     },
     {
@@ -44,8 +51,8 @@ export function AuditLogPage() {
       header: 'Target',
       cell: ({ row }) => (
         <div>
-          <p className="text-sm">{row.original.target_model}</p>
-          <p className="font-mono text-xs text-muted-foreground">{row.original.target_id}</p>
+          <p className="text-sm text-foreground">{row.original.target_model}</p>
+          <p className="font-mono text-xs text-muted-foreground">#{row.original.target_id}</p>
         </div>
       ),
     },
@@ -63,12 +70,13 @@ export function AuditLogPage() {
   return (
     <div className="space-y-4">
       <div>
-        <h1 className="text-2xl font-bold">Audit Log</h1>
+        <h1 className="text-2xl font-bold text-white">Audit Logs</h1>
         <p className="text-sm text-muted-foreground">
           Immutable record of all admin actions. Read-only.
         </p>
       </div>
       <DataTable columns={columns} data={data?.results ?? []} isLoading={isLoading} />
+      <Pagination page={page} totalPages={totalPages} onPageChange={setPage} className="mt-4" />
     </div>
   )
 }
