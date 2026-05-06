@@ -11,12 +11,16 @@ export interface AdminUser {
   first_name: string
   last_name: string
   username: string
+  phone_number: string
   is_banned: boolean
   is_kyc_verified: boolean
+  kyc_status: 'unverified' | 'pending' | 'approved' | 'rejected'
   referral_code: string
   coin_balance: string
   cash_balance: string
   total_spins: number
+  total_staked: string
+  risk_level: 'low' | 'medium' | 'high'
   created_at: string
 }
 
@@ -68,6 +72,7 @@ export interface RTPOutcome {
   multiplier: string
   probability: string
   color: string
+  showCoin?: boolean
 }
 
 export interface RTPTier {
@@ -85,20 +90,97 @@ export interface RTPTierPayload {
   outcomes: Omit<RTPOutcome, 'id'>[]
 }
 
+// Extended RTP tier (matches Create Stake modal)
+export interface RTPTierFull {
+  id: string
+  name: string
+  wheel_type: string
+  min_stake: string
+  max_stake: string
+  house_edge: string
+  rtp_target: string
+  is_active: boolean
+  created_by: string
+  outcomes: RTPOutcome[]
+}
+
+export interface CreateStakePayload {
+  name: string
+  description: string
+  min_stake: number
+  max_stake: number
+  house_edge: number
+  rtp_target: number
+  is_active: boolean
+  outcomes: { multiplier: string; probability: number }[]
+}
+
 // Analytics
-export interface AnalyticsSummary {
+export interface AdminAnalyticsSummary {
   total_users: number
   total_spins_today: number
   gross_revenue_today: string
+  net_profit_today: string
+  current_rtp: string
   pending_withdrawals_count: number
   pending_withdrawals_amount: string
   pending_kyc_count: number
+  flagged_accounts: number
+  active_users: number
+  new_users_today: number
+  total_revenue: string
+  net_profit: string
+}
+
+// AnalyticsSummary is the same as AdminAnalyticsSummary for full compatibility
+export type AnalyticsSummary = AdminAnalyticsSummary
+
+export interface MonthlyDataPoint {
+  month: string
+  revenue: number
+  profit: number
+  spins: number
+}
+
+export interface CashFlowDataPoint {
+  month: string
+  deposits: number
+  withdrawals: number
 }
 
 export interface RevenueDataPoint {
   date: string
   revenue: number
   spins: number
+}
+
+export interface RecentSpin {
+  id: string
+  user_name: string
+  stake: string
+  multiplier: string
+  result_label: string
+  win_value: string
+  outcome: 'win' | 'loss' | 'push' | 'partial_loss'
+  created_at: string
+}
+
+export interface UserTransaction {
+  id: string
+  type: 'deposit' | 'withdrawal' | 'spin_stake' | 'spin_payout' | 'reward'
+  description: string
+  amount: string
+  created_at: string
+}
+
+export interface UserSpinRecord {
+  id: string
+  stake_amount: string
+  segment_label: string
+  multiplier: string
+  payout_amount: string
+  outcome: 'win' | 'loss' | 'push' | 'partial_loss'
+  created_at: string
 }
 
 // Audit log

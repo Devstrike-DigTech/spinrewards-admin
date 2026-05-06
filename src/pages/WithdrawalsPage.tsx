@@ -1,177 +1,111 @@
-import { useState } from 'react'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { type ColumnDef } from '@tanstack/react-table'
-import { toast } from 'sonner'
-import { withdrawals as withdrawalsApi } from '@/api/endpoints'
-import type { WithdrawalRecord, WithdrawalStatus } from '@/types'
-import { DataTable } from '@/components/DataTable'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { Textarea } from '@/components/ui/textarea'
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from '@/components/ui/dialog'
-import { formatDate, formatCurrency } from '@/lib/utils'
+import { useQuery } from '@tanstack/react-query'
+import { Clock, TrendingDown, CheckCircle } from 'lucide-react'
+import { analyticsApi } from '@/api/index'
+import type { AdminAnalyticsSummary } from '@/types'
+import { Card, CardContent } from '@/components/ui/card'
+import { Skeleton } from '@/components/ui/skeleton'
+import { formatCurrency } from '@/lib/utils'
 
-const STATUS_BADGE: Record<
-  WithdrawalStatus,
-  { label: string; variant: 'success' | 'warning' | 'destructive' | 'info' | 'secondary' }
-> = {
-  pending: { label: 'Pending', variant: 'warning' },
-  processing: { label: 'Processing', variant: 'info' },
-  completed: { label: 'Completed', variant: 'success' },
-  failed: { label: 'Failed', variant: 'destructive' },
+function StatCard({
+  title,
+  value,
+  icon: Icon,
+  iconColor,
+  isLoading,
+  muted,
+}: {
+  title: string
+  value: string
+  icon: React.ElementType
+  iconColor: string
+  isLoading: boolean
+  muted?: boolean
+}) {
+  return (
+    <Card className={`border-[#1e2a4a] ${muted ? 'opacity-60' : 'bg-card'}`}>
+      <CardContent className="flex items-center gap-4 p-5">
+        <div
+          className="flex h-10 w-10 items-center justify-center rounded-xl shrink-0"
+          style={{ background: `${iconColor}22` }}
+        >
+          <Icon className="h-5 w-5" style={{ color: iconColor }} />
+        </div>
+        <div>
+          <p className="text-xs text-muted-foreground">{title}</p>
+          {isLoading ? (
+            <Skeleton className="mt-1 h-6 w-24" />
+          ) : (
+            <p className="text-xl font-bold text-white">{value}</p>
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  )
 }
 
 export function WithdrawalsPage() {
-  const queryClient = useQueryClient()
-  const [rejectTarget, setRejectTarget] = useState<WithdrawalRecord | null>(null)
-  const [rejectReason, setRejectReason] = useState('')
-
-  const { data, isLoading } = useQuery({
-    queryKey: ['withdrawals', 'pending'],
-    queryFn: () => withdrawalsApi.list({ status: 'pending' }),
+  const { data: summary, isLoading } = useQuery<AdminAnalyticsSummary>({
+    queryKey: ['analytics', 'summary'],
+    queryFn: analyticsApi.summary,
   })
-
-  const approveMutation = useMutation({
-    mutationFn: (id: string) => withdrawalsApi.approve(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['withdrawals'] })
-      toast.success('Withdrawal approved and queued for payout.')
-    },
-    onError: () => toast.error('Failed to approve withdrawal.'),
-  })
-
-  const rejectMutation = useMutation({
-    mutationFn: ({ id, reason }: { id: string; reason: string }) =>
-      withdrawalsApi.reject(id, reason),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['withdrawals'] })
-      setRejectTarget(null)
-      setRejectReason('')
-      toast.success('Withdrawal rejected. Funds reversed to user wallet.')
-    },
-    onError: () => toast.error('Failed to reject withdrawal.'),
-  })
-
-  const columns: ColumnDef<WithdrawalRecord>[] = [
-    {
-      accessorKey: 'user',
-      header: 'User',
-      cell: ({ row }) => (
-        <div>
-          <p className="font-medium">
-            {row.original.user.first_name} {row.original.user.last_name}
-          </p>
-          <p className="text-xs text-muted-foreground">@{row.original.user.username}</p>
-        </div>
-      ),
-    },
-    {
-      accessorKey: 'amount',
-      header: 'Amount',
-      cell: ({ getValue }) => (
-        <span className="font-semibold">{formatCurrency(getValue<string>())}</span>
-      ),
-    },
-    {
-      accessorKey: 'account_name',
-      header: 'Account',
-      cell: ({ row }) => (
-        <div>
-          <p className="text-sm">{row.original.account_name}</p>
-          <p className="font-mono text-xs text-muted-foreground">
-            {row.original.bank_name} · {row.original.account_number}
-          </p>
-        </div>
-      ),
-    },
-    {
-      accessorKey: 'status',
-      header: 'Status',
-      cell: ({ getValue }) => {
-        const s = getValue<WithdrawalStatus>()
-        const { label, variant } = STATUS_BADGE[s]
-        return <Badge variant={variant}>{label}</Badge>
-      },
-    },
-    {
-      accessorKey: 'created_at',
-      header: 'Requested',
-      cell: ({ getValue }) => (
-        <span className="text-xs text-muted-foreground">{formatDate(getValue<string>())}</span>
-      ),
-    },
-    {
-      id: 'actions',
-      cell: ({ row }) =>
-        row.original.status === 'pending' ? (
-          <div className="flex gap-2">
-            <Button
-              size="sm"
-              onClick={() => approveMutation.mutate(row.original.id)}
-              disabled={approveMutation.isPending}
-            >
-              Approve
-            </Button>
-            <Button
-              size="sm"
-              variant="destructive"
-              onClick={() => setRejectTarget(row.original)}
-            >
-              Reject
-            </Button>
-          </div>
-        ) : null,
-    },
-  ]
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       <div>
-        <h1 className="text-2xl font-bold">Withdrawals</h1>
-        <p className="text-sm text-muted-foreground">
-          {data?.count ?? 0} pending requests
-        </p>
+        <h1 className="text-2xl font-bold text-white">Withdrawals</h1>
+        <p className="text-sm text-muted-foreground">Withdrawal management and approvals</p>
       </div>
 
-      <DataTable columns={columns} data={data?.results ?? []} isLoading={isLoading} />
+      {/* Muted stat cards */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <StatCard
+          title="Pending Requests"
+          value={summary ? `${summary.pending_withdrawals_count} · ${formatCurrency(summary.pending_withdrawals_amount)}` : '—'}
+          icon={Clock}
+          iconColor="#C9961A"
+          isLoading={isLoading}
+          muted
+        />
+        <StatCard
+          title="Total Paid Out"
+          value="₦1,300,000"
+          icon={TrendingDown}
+          iconColor="#ef4444"
+          isLoading={false}
+          muted
+        />
+        <StatCard
+          title="Completed Today"
+          value="₦284,500"
+          icon={CheckCircle}
+          iconColor="#22c55e"
+          isLoading={false}
+          muted
+        />
+      </div>
 
-      <Dialog open={!!rejectTarget} onOpenChange={() => setRejectTarget(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Reject Withdrawal</DialogTitle>
-            <DialogDescription>
-              Funds will be reversed to the user's cash wallet automatically.
-            </DialogDescription>
-          </DialogHeader>
-          <Textarea
-            placeholder="Reason for rejection…"
-            value={rejectReason}
-            onChange={(e) => setRejectReason(e.target.value)}
-            rows={3}
-          />
-          <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={() => setRejectTarget(null)}>
-              Cancel
-            </Button>
-            <Button
-              variant="destructive"
-              disabled={!rejectReason.trim() || rejectMutation.isPending}
-              onClick={() =>
-                rejectTarget &&
-                rejectMutation.mutate({ id: rejectTarget.id, reason: rejectReason })
-              }
-            >
-              Reject & Reverse
-            </Button>
+      {/* Coming soon placeholder */}
+      <Card className="bg-card border-[#1e2a4a]">
+        <CardContent className="flex flex-col items-center justify-center py-20 text-center">
+          <div
+            className="flex h-16 w-16 items-center justify-center rounded-2xl mb-4"
+            style={{ background: 'rgba(201, 150, 26, 0.1)' }}
+          >
+            <Clock className="h-8 w-8" style={{ color: '#C9961A' }} />
           </div>
-        </DialogContent>
-      </Dialog>
+          <h3 className="text-lg font-semibold text-white mb-2">
+            Withdrawal Management module is in progress.
+          </h3>
+          <p className="text-sm text-muted-foreground max-w-md">
+            This module will allow you to review, approve, and reject withdrawal requests.
+            Funds will be automatically reversed for rejections.
+          </p>
+          <div className="mt-6 flex items-center gap-2">
+            <div className="h-2 w-2 rounded-full bg-amber-400 animate-pulse" />
+            <span className="text-xs text-muted-foreground">Under development</span>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   )
 }
