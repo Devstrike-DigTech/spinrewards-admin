@@ -9,16 +9,23 @@ import {
   AreaChart,
 } from 'recharts'
 import { TrendingUp, DollarSign, Percent, Users } from 'lucide-react'
-import { analyticsApi, recentSpinsApi } from '@/api/index'
+import { dashboardApi } from '@/api/index'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { formatCurrency } from '@/lib/utils'
-import type { AdminAnalyticsSummary, RecentSpin } from '@/types'
+import type { AdminDashboard, RecentSpin } from '@/types'
 
 function TrendBadge({ value }: { value: string }) {
+  const isPositive = !value.startsWith('-')
   return (
-    <span className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold bg-emerald-500/20 text-emerald-400">
-      {value}
+    <span
+      className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold ${
+        isPositive
+          ? 'bg-emerald-500/20 text-emerald-400'
+          : 'bg-red-500/20 text-red-400'
+      }`}
+    >
+      {isPositive ? '+' : ''}{value}%
     </span>
   )
 }
@@ -74,44 +81,30 @@ function OutcomeBadge({ outcome }: { outcome: RecentSpin['outcome'] }) {
       </span>
     )
   }
-  if (outcome === 'loss') {
-    return (
-      <span className="inline-flex items-center rounded-md px-2 py-0.5 text-xs font-semibold bg-red-500/20 text-red-400">
-        Loss
-      </span>
-    )
-  }
-  if (outcome === 'push') {
-    return (
-      <span className="inline-flex items-center rounded-md px-2 py-0.5 text-xs font-semibold bg-sky-500/20 text-sky-400">
-        Push
-      </span>
-    )
-  }
   return (
-    <span className="inline-flex items-center rounded-md px-2 py-0.5 text-xs font-semibold bg-amber-500/20 text-amber-400">
-      Partial
+    <span className="inline-flex items-center rounded-md px-2 py-0.5 text-xs font-semibold bg-red-500/20 text-red-400">
+      Loss
     </span>
   )
 }
 
 export function DashboardPage() {
-  const { data: summary, isLoading: summaryLoading } = useQuery<AdminAnalyticsSummary>({
-    queryKey: ['analytics', 'summary'],
-    queryFn: analyticsApi.summary,
+  const { data, isLoading } = useQuery<AdminDashboard>({
+    queryKey: ['dashboard'],
+    queryFn: dashboardApi.get,
     refetchInterval: 60_000,
   })
 
-  const { data: trendData, isLoading: trendLoading } = useQuery({
-    queryKey: ['analytics', 'revenue'],
-    queryFn: () => analyticsApi.revenue() as Promise<import('@/types').MonthlyDataPoint[]>,
-  })
+  const kpis = data?.kpis
+  const trend = data?.profit_trend ?? []
+  const spins = data?.recent_spins ?? []
+  const winners = data?.top_winners ?? []
 
-  const { data: recentSpins, isLoading: spinsLoading } = useQuery<import('@/types').RecentSpin[]>({
-    queryKey: ['recent-spins'],
-    queryFn: recentSpinsApi.list,
-    refetchInterval: 30_000,
-  })
+  // Normalize trend for recharts: convert value string to number
+  const trendData = trend.map((p) => ({
+    month: `${p.month} ${p.year}`,
+    value: parseFloat(p.value),
+  }))
 
   return (
     <div className="space-y-6">
@@ -124,47 +117,46 @@ export function DashboardPage() {
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard
           title="Total Revenue"
-          value={summary ? formatCurrency(summary.total_revenue) : '—'}
-          badge="+2%"
+          value={kpis ? formatCurrency(kpis.total_revenue) : '—'}
+          badge={kpis?.total_revenue_change_pct}
           icon={DollarSign}
-          isLoading={summaryLoading}
+          isLoading={isLoading}
         />
         <StatCard
           title="Net Profit"
-          value={summary ? formatCurrency(summary.net_profit) : '—'}
-          badge="+2%"
+          value={kpis ? formatCurrency(kpis.net_profit) : '—'}
           icon={TrendingUp}
-          isLoading={summaryLoading}
+          isLoading={isLoading}
         />
         <StatCard
           title="Current RTP"
-          value={summary ? `${summary.current_rtp}%` : '—'}
-          badge="+2%"
+          value={kpis?.current_rtp ?? '—'}
           icon={Percent}
-          isLoading={summaryLoading}
+          isLoading={isLoading}
         />
         <StatCard
           title="Active Users"
-          value={summary ? summary.active_users.toLocaleString() : '—'}
-          subtitle={summary ? `${summary.new_users_today} new today` : undefined}
+          value={kpis ? kpis.active_users.toLocaleString() : '—'}
+          subtitle={kpis ? `${kpis.new_users_today} new today` : undefined}
+          badge={kpis?.active_users_change_pct}
           icon={Users}
-          isLoading={summaryLoading}
+          isLoading={isLoading}
         />
       </div>
 
-      {/* Middle section: chart + recent spins */}
+      {/* Chart + recent spins */}
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-5">
-        {/* Profit Trend chart (60%) */}
+        {/* Profit Trend chart */}
         <Card className="xl:col-span-3 bg-card border-[#1e2a4a]">
           <CardHeader>
             <CardTitle className="text-base text-white">Profit Trend</CardTitle>
           </CardHeader>
           <CardContent>
-            {trendLoading ? (
+            {isLoading ? (
               <Skeleton className="h-64 w-full" />
             ) : (
               <ResponsiveContainer width="100%" height={260}>
-                <AreaChart data={trendData ?? []} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
+                <AreaChart data={trendData} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
                   <defs>
                     <linearGradient id="colorProfit" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="5%" stopColor="#C9961A" stopOpacity={0.3} />
@@ -174,7 +166,8 @@ export function DashboardPage() {
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(216 34% 17%)" />
                   <XAxis
                     dataKey="month"
-                    tick={{ fontSize: 11, fill: 'hsl(215 16% 47%)' }}
+                    tick={{ fontSize: 10, fill: 'hsl(215 16% 47%)' }}
+                    interval="preserveStartEnd"
                   />
                   <YAxis
                     tick={{ fontSize: 11, fill: 'hsl(215 16% 47%)' }}
@@ -187,11 +180,11 @@ export function DashboardPage() {
                       borderRadius: '8px',
                       fontSize: 12,
                     }}
-                    formatter={(v: number) => [formatCurrency(v), 'Revenue']}
+                    formatter={(v: number) => [formatCurrency(v), 'Profit']}
                   />
                   <Area
                     type="monotone"
-                    dataKey="revenue"
+                    dataKey="value"
                     stroke="#C9961A"
                     strokeWidth={2}
                     fill="url(#colorProfit)"
@@ -202,13 +195,13 @@ export function DashboardPage() {
           </CardContent>
         </Card>
 
-        {/* Recent Spins table (40%) */}
+        {/* Recent Spins table */}
         <Card className="xl:col-span-2 bg-card border-[#1e2a4a]">
           <CardHeader>
             <CardTitle className="text-base text-white">Recent Spins</CardTitle>
           </CardHeader>
           <CardContent className="p-0">
-            {spinsLoading ? (
+            {isLoading ? (
               <div className="space-y-2 p-4">
                 {[1, 2, 3, 4, 5].map((i) => (
                   <Skeleton key={i} className="h-10 w-full" />
@@ -226,10 +219,10 @@ export function DashboardPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {(recentSpins ?? []).map((spin) => (
-                      <tr key={spin.id} className="border-b border-[#1e2a4a]/50 hover:bg-white/2 last:border-0">
+                    {spins.map((spin, i) => (
+                      <tr key={spin.id ?? i} className="border-b border-[#1e2a4a]/50 hover:bg-white/2 last:border-0">
                         <td className="px-4 py-2 text-xs font-medium text-foreground truncate max-w-[80px]">
-                          {spin.user_name.split(' ')[0]}
+                          {spin.user.split(' ')[0]}
                         </td>
                         <td className="px-4 py-2 text-xs text-muted-foreground">
                           ₦{parseFloat(spin.stake).toLocaleString()}
@@ -240,10 +233,6 @@ export function DashboardPage() {
                         <td className="px-4 py-2 text-right text-xs font-semibold">
                           {spin.outcome === 'win' ? (
                             <span className="text-emerald-400">
-                              ₦{parseFloat(spin.win_value).toLocaleString()}
-                            </span>
-                          ) : spin.outcome === 'partial_loss' ? (
-                            <span className="text-amber-400">
                               ₦{parseFloat(spin.win_value).toLocaleString()}
                             </span>
                           ) : (
@@ -260,54 +249,72 @@ export function DashboardPage() {
         </Card>
       </div>
 
-      {/* Today's stats strip */}
-      <Card className="bg-card border-[#1e2a4a]">
-        <CardContent className="py-4">
-          <div className="flex flex-wrap items-center gap-8">
-            <div className="text-center">
-              <p className="text-xs text-muted-foreground">Today's Revenue</p>
-              <p className="mt-0.5 text-lg font-bold text-white">
-                {summary ? formatCurrency(summary.gross_revenue_today) : '—'}
-              </p>
+      {/* Top winners + summary strip */}
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-5">
+        {/* Top winners */}
+        <Card className="xl:col-span-2 bg-card border-[#1e2a4a]">
+          <CardHeader>
+            <CardTitle className="text-base text-white">Top Winners</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {isLoading ? (
+              <div className="space-y-2">
+                {[1, 2, 3].map((i) => <Skeleton key={i} className="h-8 w-full" />)}
+              </div>
+            ) : winners.map((w, i) => (
+              <div key={i} className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div
+                    className="flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold text-white shrink-0"
+                    style={{ background: i === 0 ? '#C9961A' : '#1e2a4a' }}
+                  >
+                    {i + 1}
+                  </div>
+                  <span className="text-sm text-foreground">{w.user}</span>
+                </div>
+                <span className="text-sm font-semibold text-emerald-400">
+                  {formatCurrency(w.win_value)}
+                </span>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+
+        {/* KPI strip */}
+        <Card className="xl:col-span-3 bg-card border-[#1e2a4a]">
+          <CardContent className="py-5">
+            <div className="flex flex-wrap items-center gap-8">
+              <div className="text-center">
+                <p className="text-xs text-muted-foreground">Active Users</p>
+                <p className="mt-0.5 text-lg font-bold text-white">
+                  {kpis ? kpis.active_users.toLocaleString() : '—'}
+                </p>
+              </div>
+              <div className="h-8 w-px bg-[#1e2a4a]" />
+              <div className="text-center">
+                <p className="text-xs text-muted-foreground">New Today</p>
+                <p className="mt-0.5 text-lg font-bold text-emerald-400">
+                  {kpis ? `+${kpis.new_users_today}` : '—'}
+                </p>
+              </div>
+              <div className="h-8 w-px bg-[#1e2a4a]" />
+              <div className="text-center">
+                <p className="text-xs text-muted-foreground">Current RTP</p>
+                <p className="mt-0.5 text-lg font-bold text-white">
+                  {kpis?.current_rtp ?? '—'}
+                </p>
+              </div>
+              <div className="h-8 w-px bg-[#1e2a4a]" />
+              <div className="text-center">
+                <p className="text-xs text-muted-foreground">Net Profit</p>
+                <p className="mt-0.5 text-lg font-bold" style={{ color: '#C9961A' }}>
+                  {kpis ? formatCurrency(kpis.net_profit) : '—'}
+                </p>
+              </div>
             </div>
-            <div className="h-8 w-px bg-[#1e2a4a]" />
-            <div className="text-center">
-              <p className="text-xs text-muted-foreground">Today's Profit</p>
-              <p className="mt-0.5 text-lg font-bold text-emerald-400">
-                {summary ? formatCurrency(summary.net_profit_today) : '—'}
-              </p>
-            </div>
-            <div className="h-8 w-px bg-[#1e2a4a]" />
-            <div className="text-center">
-              <p className="text-xs text-muted-foreground">Spins Today</p>
-              <p className="mt-0.5 text-lg font-bold text-white">
-                {summary?.total_spins_today.toLocaleString() ?? '—'}
-              </p>
-            </div>
-            <div className="h-8 w-px bg-[#1e2a4a]" />
-            <div className="text-center">
-              <p className="text-xs text-muted-foreground">Pending Withdrawals</p>
-              <p className="mt-0.5 text-lg font-bold" style={{ color: '#C9961A' }}>
-                {summary ? `${summary.pending_withdrawals_count} · ${formatCurrency(summary.pending_withdrawals_amount)}` : '—'}
-              </p>
-            </div>
-            <div className="h-8 w-px bg-[#1e2a4a]" />
-            <div className="text-center">
-              <p className="text-xs text-muted-foreground">Flagged Accounts</p>
-              <p className="mt-0.5 text-lg font-bold text-red-400">
-                {summary?.flagged_accounts ?? '—'}
-              </p>
-            </div>
-            <div className="h-8 w-px bg-[#1e2a4a]" />
-            <div className="text-center">
-              <p className="text-xs text-muted-foreground">Pending KYC</p>
-              <p className="mt-0.5 text-lg font-bold text-amber-400">
-                {summary?.pending_kyc_count ?? '—'}
-              </p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   )
 }

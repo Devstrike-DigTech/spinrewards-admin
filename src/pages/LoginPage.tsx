@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 
 const schema = z.object({
-  username: z.string().min(1, 'Username is required'),
+  email: z.string().email('Enter a valid email address'),
   password: z.string().min(1, 'Password is required'),
 })
 
@@ -32,44 +32,37 @@ export function LoginPage() {
   async function onSubmit(values: FormValues) {
     setError(null)
     try {
-      const tokens = await authApi.login(values.username, values.password)
-      setAuth(tokens, values.username)
+      const res = await authApi.login(values.email, values.password)
+      setAuth(
+        { access_token: res.access_token, refresh_token: res.refresh_token },
+        res.admin,
+      )
       navigate('/')
-    } catch {
-      setError('Invalid username or password.')
+    } catch (err: any) {
+      const msg =
+        err?.response?.data?.message ??
+        err?.response?.data?.detail ??
+        'Invalid email or password.'
+      setError(msg)
     }
   }
 
   return (
     <div className="flex h-screen overflow-hidden bg-[#07090F]">
-      {/* Left brand panel - hidden on small screens */}
+      {/* Left brand panel */}
       <div
         className="hidden lg:flex lg:w-1/2 flex-col items-center justify-center p-12 relative overflow-hidden"
         style={{
           background: 'linear-gradient(135deg, #07090F 0%, #0D1220 50%, #1A237E22 100%)',
         }}
       >
-        {/* Decorative circles */}
-        <div
-          className="absolute -top-32 -left-32 h-96 w-96 rounded-full opacity-10"
-          style={{ background: '#1A237E' }}
-        />
-        <div
-          className="absolute -bottom-20 -right-20 h-72 w-72 rounded-full opacity-10"
-          style={{ background: '#C9961A' }}
-        />
-        <div
-          className="absolute top-1/3 left-1/3 h-48 w-48 rounded-full opacity-5"
-          style={{ background: '#C9961A' }}
-        />
+        <div className="absolute -top-32 -left-32 h-96 w-96 rounded-full opacity-10" style={{ background: '#1A237E' }} />
+        <div className="absolute -bottom-20 -right-20 h-72 w-72 rounded-full opacity-10" style={{ background: '#C9961A' }} />
+        <div className="absolute top-1/3 left-1/3 h-48 w-48 rounded-full opacity-5" style={{ background: '#C9961A' }} />
 
         <div className="relative z-10 text-center">
-          {/* Logo */}
           <div className="mb-8 flex items-center justify-center gap-2">
-            <div
-              className="flex h-16 w-16 items-center justify-center rounded-2xl text-2xl font-black text-white"
-              style={{ background: '#1A237E' }}
-            >
+            <div className="flex h-16 w-16 items-center justify-center rounded-2xl text-2xl font-black text-white" style={{ background: '#1A237E' }}>
               SR
             </div>
           </div>
@@ -77,11 +70,8 @@ export function LoginPage() {
             Spin<span style={{ color: '#C9961A' }}>Rewards</span>
           </h1>
           <p className="mb-1 text-lg font-semibold text-white/80">Admin Dashboard</p>
-          <p className="text-sm text-white/40">
-            Real-time insights. Full control. Zero guesswork.
-          </p>
+          <p className="text-sm text-white/40">Real-time insights. Full control. Zero guesswork.</p>
 
-          {/* Feature pills */}
           <div className="mt-10 flex flex-col gap-3 text-left">
             {[
               { icon: '📊', text: 'Live analytics & revenue tracking' },
@@ -107,18 +97,12 @@ export function LoginPage() {
         <div className="w-full max-w-md">
           {/* Mobile logo */}
           <div className="mb-8 flex items-center gap-2 lg:hidden">
-            <div
-              className="flex h-10 w-10 items-center justify-center rounded-xl text-sm font-black text-white"
-              style={{ background: '#1A237E' }}
-            >
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl text-sm font-black text-white" style={{ background: '#1A237E' }}>
               SR
             </div>
             <div className="flex items-baseline gap-1">
               <span className="text-xl font-black text-white">SpinRewards</span>
-              <span
-                className="rounded px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider"
-                style={{ background: '#C9961A22', color: '#C9961A' }}
-              >
+              <span className="rounded px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider" style={{ background: '#C9961A22', color: '#C9961A' }}>
                 Admin
               </span>
             </div>
@@ -133,25 +117,22 @@ export function LoginPage() {
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
             <div className="space-y-1.5">
-              <Label htmlFor="username" className="text-sm text-foreground">
-                Username
-              </Label>
+              <Label htmlFor="email" className="text-sm text-foreground">Email</Label>
               <Input
-                id="username"
-                autoComplete="username"
-                placeholder="admin"
+                id="email"
+                type="email"
+                autoComplete="email"
+                placeholder="admin@spinrewards.com"
                 className="h-11 border-[#1e2a4a] bg-[#0D1220] text-foreground placeholder:text-muted-foreground focus:border-gold focus-visible:ring-gold"
-                {...register('username')}
+                {...register('email')}
               />
-              {errors.username && (
-                <p className="text-xs text-destructive">{errors.username.message}</p>
+              {errors.email && (
+                <p className="text-xs text-destructive">{errors.email.message}</p>
               )}
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="password" className="text-sm text-foreground">
-                Password
-              </Label>
+              <Label htmlFor="password" className="text-sm text-foreground">Password</Label>
               <Input
                 id="password"
                 type="password"
@@ -186,14 +167,16 @@ export function LoginPage() {
               className="mt-6 rounded-lg px-4 py-3"
               style={{ background: 'rgba(201, 150, 26, 0.08)', border: '1px solid rgba(201, 150, 26, 0.2)' }}
             >
-              <p className="text-xs font-medium" style={{ color: '#C9961A' }}>
-                Mock mode enabled
-              </p>
+              <p className="text-xs font-medium" style={{ color: '#C9961A' }}>Mock mode enabled</p>
               <p className="mt-0.5 text-xs text-muted-foreground">
-                Use any username with any password to sign in.
+                Use any email address with any password to sign in.
               </p>
             </div>
           )}
+
+          <p className="mt-6 text-center text-xs text-muted-foreground">
+            Admin accounts are created by the backend team. Contact them if you need access.
+          </p>
         </div>
       </div>
     </div>

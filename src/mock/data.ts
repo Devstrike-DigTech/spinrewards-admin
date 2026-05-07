@@ -1,245 +1,309 @@
 import type {
-  AdminAnalyticsSummary,
-  MonthlyDataPoint,
-  CashFlowDataPoint,
-  RecentSpin,
+  AdminDashboard,
+  AdminFinancials,
   AdminUser,
+  AdminUserDetail,
   UserSpinRecord,
   UserTransaction,
-  KYCRecord,
-  WithdrawalRecord,
-  RTPTierFull,
+  AdminWithdrawal,
+  AdminKYCQueueItem,
+  FraudData,
+  RTPWheel,
   AuditLogEntry,
 } from '@/types'
 
-// Analytics summary
-export const MOCK_SUMMARY: AdminAnalyticsSummary = {
-  total_users: 5698,
-  total_spins_today: 432,
-  gross_revenue_today: '284500',
-  net_profit_today: '156000',
-  current_rtp: '70',
-  pending_withdrawals_count: 12,
-  pending_withdrawals_amount: '3500000',
-  pending_kyc_count: 12,
-  flagged_accounts: 36,
-  active_users: 4599,
-  new_users_today: 52,
-  total_revenue: '2400500',
-  net_profit: '1300000',
+// ── Dashboard ────────────────────────────────────────────────────────────────
+
+export const MOCK_DASHBOARD: AdminDashboard = {
+  kpis: {
+    total_revenue: '2400500.00',
+    total_revenue_change_pct: '2.0',
+    net_profit: '1300000.00',
+    current_rtp: '70.0%',
+    active_users: 4599,
+    active_users_change_pct: '52.0',
+    new_users_today: 52,
+  },
+  profit_trend: [
+    { month: 'Jan', year: 2026, value: '180000.00' },
+    { month: 'Feb', year: 2026, value: '220000.00' },
+    { month: 'Mar', year: 2026, value: '310000.00' },
+    { month: 'Apr', year: 2026, value: '270000.00' },
+    { month: 'May', year: 2026, value: '350000.00' },
+    { month: 'Jun', year: 2026, value: '400000.00' },
+    { month: 'Jul', year: 2026, value: '480000.00' },
+    { month: 'Aug', year: 2026, value: '420000.00' },
+    { month: 'Sep', year: 2026, value: '510000.00' },
+    { month: 'Oct', year: 2026, value: '560000.00' },
+    { month: 'Nov', year: 2026, value: '530000.00' },
+    { month: 'Dec', year: 2026, value: '620000.00' },
+  ],
+  recent_spins: [
+    { id: 'sp1', user: 'Chidi Okonkwo', stake: '500.00', result: '2x', multiplier: '2.0000', win_value: '1000.00', outcome: 'win', date: 'May 4, 2026' },
+    { id: 'sp2', user: 'Ngozi Adeyemi', stake: '200.00', result: 'Loss', multiplier: '0.0000', win_value: '0.00', outcome: 'loss', date: 'May 4, 2026' },
+    { id: 'sp3', user: 'Emeka Eze', stake: '1000.00', result: '5x', multiplier: '5.0000', win_value: '5000.00', outcome: 'win', date: 'May 4, 2026' },
+    { id: 'sp4', user: 'Sola Adesanya', stake: '500.00', result: 'Loss', multiplier: '0.0000', win_value: '0.00', outcome: 'loss', date: 'May 4, 2026' },
+    { id: 'sp5', user: 'Kemi Okafor', stake: '1000.00', result: '2x', multiplier: '2.0000', win_value: '2000.00', outcome: 'win', date: 'May 4, 2026' },
+    { id: 'sp6', user: 'Dayo Adeleke', stake: '300.00', result: 'Loss', multiplier: '0.0000', win_value: '0.00', outcome: 'loss', date: 'May 4, 2026' },
+  ],
+  top_winners: [
+    { user: 'Emeka Eze', win_value: '50000.00' },
+    { user: 'Kayode Salami', win_value: '35000.00' },
+    { user: 'Kemi Okafor', win_value: '20000.00' },
+  ],
 }
 
-// Monthly profit trend (Jan-Dec)
-export const MOCK_PROFIT_TREND: MonthlyDataPoint[] = [
-  { month: 'Jan', revenue: 1200000, profit: 840000, spins: 3200 },
-  { month: 'Feb', revenue: 980000, profit: 686000, spins: 2800 },
-  { month: 'Mar', revenue: 1450000, profit: 1015000, spins: 4100 },
-  { month: 'Apr', revenue: 1100000, profit: 770000, spins: 3050 },
-  { month: 'May', revenue: 1650000, profit: 1155000, spins: 4600 },
-  { month: 'Jun', revenue: 1800000, profit: 1260000, spins: 5200 },
-  { month: 'Jul', revenue: 2100000, profit: 1470000, spins: 6100 },
-  { month: 'Aug', revenue: 1900000, profit: 1330000, spins: 5400 },
-  { month: 'Sep', revenue: 2200000, profit: 1540000, spins: 6300 },
-  { month: 'Oct', revenue: 2400000, profit: 1680000, spins: 6900 },
-  { month: 'Nov', revenue: 2300000, profit: 1610000, spins: 6600 },
-  { month: 'Dec', revenue: 2600000, profit: 1820000, spins: 7400 },
-]
+// ── Financials ────────────────────────────────────────────────────────────────
 
-// Cash flow for Financials page
-export const MOCK_CASHFLOW: CashFlowDataPoint[] = [
-  { month: 'Jan', deposits: 1800000, withdrawals: 600000 },
-  { month: 'Feb', deposits: 1500000, withdrawals: 520000 },
-  { month: 'Mar', deposits: 2100000, withdrawals: 650000 },
-  { month: 'Apr', deposits: 1700000, withdrawals: 600000 },
-  { month: 'May', deposits: 2300000, withdrawals: 650000 },
-  { month: 'Jun', deposits: 2600000, withdrawals: 800000 },
-  { month: 'Jul', deposits: 3000000, withdrawals: 900000 },
-  { month: 'Aug', deposits: 2700000, withdrawals: 800000 },
-  { month: 'Sep', deposits: 3100000, withdrawals: 900000 },
-  { month: 'Oct', deposits: 3400000, withdrawals: 1000000 },
-  { month: 'Nov', deposits: 3300000, withdrawals: 1000000 },
-  { month: 'Dec', deposits: 3700000, withdrawals: 1100000 },
-]
+export const MOCK_FINANCIALS: AdminFinancials = {
+  kpis: {
+    total_deposits: '2400500.00',
+    total_deposits_change_pct: '2.0',
+    total_withdrawals: '1300000.00',
+    total_withdrawals_change_pct: '2.0',
+    pending_withdrawals: '350000.00',
+  },
+  spins_breakdown: {
+    total_staked: '500000.00',
+    total_won: '350000.00',
+    house_fees: '150000.00',
+    spin_count_total: 2050,
+    spin_count_wins: 450,
+    spin_count_losses: 800,
+  },
+  cash_flow: {
+    deposits: [
+      { month: 'Jan', year: 2026, value: '1800000.00' },
+      { month: 'Feb', year: 2026, value: '1500000.00' },
+      { month: 'Mar', year: 2026, value: '2100000.00' },
+      { month: 'Apr', year: 2026, value: '1700000.00' },
+      { month: 'May', year: 2026, value: '2300000.00' },
+      { month: 'Jun', year: 2026, value: '2600000.00' },
+    ],
+    withdrawals: [
+      { month: 'Jan', year: 2026, value: '600000.00' },
+      { month: 'Feb', year: 2026, value: '520000.00' },
+      { month: 'Mar', year: 2026, value: '650000.00' },
+      { month: 'Apr', year: 2026, value: '600000.00' },
+      { month: 'May', year: 2026, value: '650000.00' },
+      { month: 'Jun', year: 2026, value: '800000.00' },
+    ],
+  },
+}
 
-// Revenue breakdown for donut chart
-export const MOCK_REVENUE_BREAKDOWN = [
-  { name: 'Stakes', value: 1050, percent: 51.22, color: '#1A237E' },
-  { name: 'Fees', value: 550, percent: 26.83, color: '#C9961A' },
-  { name: 'Ads', value: 450, percent: 21.95, color: '#3de8c4' },
-]
+// ── RTP Wheels ────────────────────────────────────────────────────────────────
 
-// Recent spins for dashboard table
-export const MOCK_RECENT_SPINS: RecentSpin[] = [
-  { id: 'sp1', user_name: 'Chidi Okonkwo', stake: '500', multiplier: '2', result_label: '2x Win', win_value: '1000', outcome: 'win', created_at: '2026-05-06T10:32:00Z' },
-  { id: 'sp2', user_name: 'Ngozi Adeyemi', stake: '200', multiplier: '0', result_label: 'Loss', win_value: '0', outcome: 'loss', created_at: '2026-05-06T10:28:00Z' },
-  { id: 'sp3', user_name: 'Emeka Eze', stake: '1000', multiplier: '5', result_label: '5x Win', win_value: '5000', outcome: 'win', created_at: '2026-05-06T10:25:00Z' },
-  { id: 'sp4', user_name: 'Amaka Nwosu', stake: '300', multiplier: '0.5', result_label: '0.5x', win_value: '150', outcome: 'partial_loss', created_at: '2026-05-06T10:21:00Z' },
-  { id: 'sp5', user_name: 'Bola Tinubu', stake: '500', multiplier: '0', result_label: 'Loss', win_value: '0', outcome: 'loss', created_at: '2026-05-06T10:18:00Z' },
-  { id: 'sp6', user_name: 'Ifeanyi Obi', stake: '2000', multiplier: '10', result_label: '10x Win', win_value: '20000', outcome: 'win', created_at: '2026-05-06T10:14:00Z' },
-  { id: 'sp7', user_name: 'Sola Adesanya', stake: '200', multiplier: '1', result_label: '1x Push', win_value: '200', outcome: 'push', created_at: '2026-05-06T10:10:00Z' },
-  { id: 'sp8', user_name: 'Tunde Badmus', stake: '500', multiplier: '0', result_label: 'Loss', win_value: '0', outcome: 'loss', created_at: '2026-05-06T10:06:00Z' },
-  { id: 'sp9', user_name: 'Kemi Okafor', stake: '1000', multiplier: '2', result_label: '2x Win', win_value: '2000', outcome: 'win', created_at: '2026-05-06T10:03:00Z' },
-  { id: 'sp10', user_name: 'Dayo Adeleke', stake: '300', multiplier: '0', result_label: 'Loss', win_value: '0', outcome: 'loss', created_at: '2026-05-06T09:58:00Z' },
-]
-
-// Users (20 users)
-export const MOCK_USERS: AdminUser[] = [
-  { id: '1', telegram_id: '1001234567', first_name: 'Chidi', last_name: 'Okonkwo', username: 'chidi_o', phone_number: '+2348012345678', is_banned: false, is_kyc_verified: true, kyc_status: 'approved', referral_code: 'CHI001', coin_balance: '1250', cash_balance: '45000', total_spins: 87, total_staked: '89500', risk_level: 'low', created_at: '2025-11-12T08:00:00Z' },
-  { id: '2', telegram_id: '1001234568', first_name: 'Ngozi', last_name: 'Adeyemi', username: 'ngozi_a', phone_number: '+2348023456789', is_banned: false, is_kyc_verified: false, kyc_status: 'pending', referral_code: 'NGO002', coin_balance: '340', cash_balance: '12000', total_spins: 23, total_staked: '15600', risk_level: 'low', created_at: '2025-12-01T10:00:00Z' },
-  { id: '3', telegram_id: '1001234569', first_name: 'Emeka', last_name: 'Eze', username: 'emeka_eze', phone_number: '+2348034567890', is_banned: false, is_kyc_verified: true, kyc_status: 'approved', referral_code: 'EME003', coin_balance: '5670', cash_balance: '230000', total_spins: 412, total_staked: '556000', risk_level: 'medium', created_at: '2025-10-05T09:00:00Z' },
-  { id: '4', telegram_id: '1001234570', first_name: 'Amaka', last_name: 'Nwosu', username: 'amaka_n', phone_number: '+2348045678901', is_banned: false, is_kyc_verified: false, kyc_status: 'unverified', referral_code: 'AMA004', coin_balance: '120', cash_balance: '5000', total_spins: 8, total_staked: '3200', risk_level: 'low', created_at: '2026-01-15T11:00:00Z' },
-  { id: '5', telegram_id: '1001234571', first_name: 'Ifeanyi', last_name: 'Obi', username: 'ifeanyi_o', phone_number: '+2348056789012', is_banned: true, is_kyc_verified: true, kyc_status: 'approved', referral_code: 'IFE005', coin_balance: '0', cash_balance: '0', total_spins: 980, total_staked: '1250000', risk_level: 'high', created_at: '2025-09-20T07:00:00Z' },
-  { id: '6', telegram_id: '1001234572', first_name: 'Sola', last_name: 'Adesanya', username: 'sola_a', phone_number: '+2348067890123', is_banned: false, is_kyc_verified: true, kyc_status: 'approved', referral_code: 'SOL006', coin_balance: '890', cash_balance: '67000', total_spins: 156, total_staked: '178000', risk_level: 'low', created_at: '2025-10-30T14:00:00Z' },
-  { id: '7', telegram_id: '1001234573', first_name: 'Tunde', last_name: 'Badmus', username: 'tunde_b', phone_number: '+2348078901234', is_banned: false, is_kyc_verified: false, kyc_status: 'rejected', referral_code: 'TUN007', coin_balance: '55', cash_balance: '2500', total_spins: 12, total_staked: '4800', risk_level: 'low', created_at: '2026-02-10T15:00:00Z' },
-  { id: '8', telegram_id: '1001234574', first_name: 'Kemi', last_name: 'Okafor', username: 'kemi_ok', phone_number: '+2348089012345', is_banned: false, is_kyc_verified: true, kyc_status: 'approved', referral_code: 'KEM008', coin_balance: '2340', cash_balance: '98000', total_spins: 267, total_staked: '310000', risk_level: 'medium', created_at: '2025-11-08T16:00:00Z' },
-  { id: '9', telegram_id: '1001234575', first_name: 'Dayo', last_name: 'Adeleke', username: 'dayo_a', phone_number: '+2348090123456', is_banned: false, is_kyc_verified: false, kyc_status: 'pending', referral_code: 'DAY009', coin_balance: '200', cash_balance: '8000', total_spins: 19, total_staked: '9500', risk_level: 'low', created_at: '2026-03-01T09:00:00Z' },
-  { id: '10', telegram_id: '1001234576', first_name: 'Femi', last_name: 'Adewale', username: 'femi_a', phone_number: '+2348001234567', is_banned: false, is_kyc_verified: true, kyc_status: 'approved', referral_code: 'FEM010', coin_balance: '4500', cash_balance: '175000', total_spins: 389, total_staked: '445000', risk_level: 'medium', created_at: '2025-10-18T12:00:00Z' },
-  { id: '11', telegram_id: '1001234577', first_name: 'Chioma', last_name: 'Igwe', username: 'chioma_i', phone_number: '+2348011234567', is_banned: false, is_kyc_verified: true, kyc_status: 'approved', referral_code: 'CHO011', coin_balance: '780', cash_balance: '42000', total_spins: 95, total_staked: '67000', risk_level: 'low', created_at: '2025-12-20T13:00:00Z' },
-  { id: '12', telegram_id: '1001234578', first_name: 'Uche', last_name: 'Nnamdi', username: 'uche_n', phone_number: '+2348022345678', is_banned: false, is_kyc_verified: false, kyc_status: 'pending', referral_code: 'UCH012', coin_balance: '90', cash_balance: '3500', total_spins: 7, total_staked: '2800', risk_level: 'low', created_at: '2026-04-05T10:00:00Z' },
-  { id: '13', telegram_id: '1001234579', first_name: 'Adaeze', last_name: 'Okonma', username: 'adaeze_o', phone_number: '+2348033456789', is_banned: false, is_kyc_verified: true, kyc_status: 'approved', referral_code: 'ADA013', coin_balance: '3200', cash_balance: '124000', total_spins: 223, total_staked: '267000', risk_level: 'medium', created_at: '2025-11-25T08:00:00Z' },
-  { id: '14', telegram_id: '1001234580', first_name: 'Kayode', last_name: 'Salami', username: 'kayode_s', phone_number: '+2348044567890', is_banned: false, is_kyc_verified: true, kyc_status: 'approved', referral_code: 'KAY014', coin_balance: '11000', cash_balance: '450000', total_spins: 756, total_staked: '890000', risk_level: 'high', created_at: '2025-09-10T07:00:00Z' },
-  { id: '15', telegram_id: '1001234581', first_name: 'Blessing', last_name: 'Effiong', username: 'blessing_e', phone_number: '+2348055678901', is_banned: false, is_kyc_verified: false, kyc_status: 'unverified', referral_code: 'BLE015', coin_balance: '45', cash_balance: '1500', total_spins: 3, total_staked: '600', risk_level: 'low', created_at: '2026-04-20T11:00:00Z' },
-  { id: '16', telegram_id: '1001234582', first_name: 'Rotimi', last_name: 'Afolabi', username: 'rotimi_a', phone_number: '+2348066789012', is_banned: true, is_kyc_verified: true, kyc_status: 'approved', referral_code: 'ROT016', coin_balance: '0', cash_balance: '0', total_spins: 1200, total_staked: '2500000', risk_level: 'high', created_at: '2025-08-15T06:00:00Z' },
-  { id: '17', telegram_id: '1001234583', first_name: 'Maryam', last_name: 'Bello', username: 'maryam_b', phone_number: '+2348077890123', is_banned: false, is_kyc_verified: true, kyc_status: 'approved', referral_code: 'MAR017', coin_balance: '1560', cash_balance: '78000', total_spins: 134, total_staked: '156000', risk_level: 'low', created_at: '2025-12-10T14:00:00Z' },
-  { id: '18', telegram_id: '1001234584', first_name: 'Obinna', last_name: 'Okeke', username: 'obinna_ok', phone_number: '+2348088901234', is_banned: false, is_kyc_verified: false, kyc_status: 'pending', referral_code: 'OBI018', coin_balance: '280', cash_balance: '11000', total_spins: 31, total_staked: '18600', risk_level: 'medium', created_at: '2026-01-22T09:00:00Z' },
-  { id: '19', telegram_id: '1001234585', first_name: 'Grace', last_name: 'Oduola', username: 'grace_od', phone_number: '+2348099012345', is_banned: false, is_kyc_verified: true, kyc_status: 'approved', referral_code: 'GRA019', coin_balance: '670', cash_balance: '34000', total_spins: 78, total_staked: '56000', risk_level: 'low', created_at: '2025-11-30T15:00:00Z' },
-  { id: '20', telegram_id: '1001234586', first_name: 'Seun', last_name: 'Ogundimu', username: 'seun_og', phone_number: '+2348000123456', is_banned: false, is_kyc_verified: true, kyc_status: 'approved', referral_code: 'SEU020', coin_balance: '8900', cash_balance: '356000', total_spins: 540, total_staked: '678000', risk_level: 'high', created_at: '2025-09-28T08:00:00Z' },
-]
-
-// User spins (10 records)
-export const MOCK_USER_SPINS: UserSpinRecord[] = [
-  { id: 'usp1', stake_amount: '500', segment_label: '2x Win', multiplier: '2', payout_amount: '1000', outcome: 'win', created_at: '2026-05-05T18:30:00Z' },
-  { id: 'usp2', stake_amount: '200', segment_label: 'Loss', multiplier: '0', payout_amount: '0', outcome: 'loss', created_at: '2026-05-05T17:45:00Z' },
-  { id: 'usp3', stake_amount: '1000', segment_label: '5x Win', multiplier: '5', payout_amount: '5000', outcome: 'win', created_at: '2026-05-05T16:20:00Z' },
-  { id: 'usp4', stake_amount: '300', segment_label: '0.5x', multiplier: '0.5', payout_amount: '150', outcome: 'partial_loss', created_at: '2026-05-05T14:10:00Z' },
-  { id: 'usp5', stake_amount: '500', segment_label: 'Loss', multiplier: '0', payout_amount: '0', outcome: 'loss', created_at: '2026-05-05T12:00:00Z' },
-  { id: 'usp6', stake_amount: '2000', segment_label: '10x Win', multiplier: '10', payout_amount: '20000', outcome: 'win', created_at: '2026-05-04T22:30:00Z' },
-  { id: 'usp7', stake_amount: '200', segment_label: '1x Push', multiplier: '1', payout_amount: '200', outcome: 'push', created_at: '2026-05-04T19:15:00Z' },
-  { id: 'usp8', stake_amount: '500', segment_label: 'Loss', multiplier: '0', payout_amount: '0', outcome: 'loss', created_at: '2026-05-04T16:00:00Z' },
-  { id: 'usp9', stake_amount: '1000', segment_label: '2x Win', multiplier: '2', payout_amount: '2000', outcome: 'win', created_at: '2026-05-04T12:30:00Z' },
-  { id: 'usp10', stake_amount: '300', segment_label: 'Loss', multiplier: '0', payout_amount: '0', outcome: 'loss', created_at: '2026-05-03T20:00:00Z' },
-]
-
-// User transactions (10 records)
-export const MOCK_USER_TRANSACTIONS: UserTransaction[] = [
-  { id: 'tx1', type: 'deposit', description: 'Bank transfer deposit', amount: '5000', created_at: '2026-05-05T09:00:00Z' },
-  { id: 'tx2', type: 'spin_stake', description: 'Spin stake placed', amount: '-500', created_at: '2026-05-05T18:30:00Z' },
-  { id: 'tx3', type: 'spin_payout', description: '2x Win payout', amount: '1000', created_at: '2026-05-05T18:31:00Z' },
-  { id: 'tx4', type: 'withdrawal', description: 'Withdrawal to GTBank', amount: '-3000', created_at: '2026-05-05T14:00:00Z' },
-  { id: 'tx5', type: 'deposit', description: 'Bank transfer deposit', amount: '10000', created_at: '2026-05-04T11:00:00Z' },
-  { id: 'tx6', type: 'spin_stake', description: 'Spin stake placed', amount: '-2000', created_at: '2026-05-04T22:30:00Z' },
-  { id: 'tx7', type: 'spin_payout', description: '10x Win payout', amount: '20000', created_at: '2026-05-04T22:31:00Z' },
-  { id: 'tx8', type: 'reward', description: 'Referral reward', amount: '500', created_at: '2026-05-03T16:00:00Z' },
-  { id: 'tx9', type: 'spin_stake', description: 'Spin stake placed', amount: '-300', created_at: '2026-05-03T20:00:00Z' },
-  { id: 'tx10', type: 'deposit', description: 'Bank transfer deposit', amount: '2000', created_at: '2026-05-01T09:00:00Z' },
-]
-
-// KYC records (15 records)
-export const MOCK_KYC: KYCRecord[] = [
-  { id: 'kyc1', user: { id: '2', telegram_id: '1001234568', first_name: 'Ngozi', last_name: 'Adeyemi', username: 'ngozi_a' }, status: 'pending', bank_name: 'GTBank', account_number: '0123456789', account_name: 'Ngozi Adeyemi', submitted_at: '2026-05-03T10:00:00Z', reviewed_at: null, rejection_reason: null },
-  { id: 'kyc2', user: { id: '9', telegram_id: '1001234575', first_name: 'Dayo', last_name: 'Adeleke', username: 'dayo_a' }, status: 'pending', bank_name: 'Access Bank', account_number: '0234567890', account_name: 'Dayo Adeleke', submitted_at: '2026-05-02T12:00:00Z', reviewed_at: null, rejection_reason: null },
-  { id: 'kyc3', user: { id: '12', telegram_id: '1001234578', first_name: 'Uche', last_name: 'Nnamdi', username: 'uche_n' }, status: 'pending', bank_name: 'First Bank', account_number: '3012345678', account_name: 'Uche Nnamdi', submitted_at: '2026-05-04T08:00:00Z', reviewed_at: null, rejection_reason: null },
-  { id: 'kyc4', user: { id: '18', telegram_id: '1001234584', first_name: 'Obinna', last_name: 'Okeke', username: 'obinna_ok' }, status: 'pending', bank_name: 'UBA', account_number: '2034567890', account_name: 'Obinna Okeke', submitted_at: '2026-05-05T07:00:00Z', reviewed_at: null, rejection_reason: null },
-  { id: 'kyc5', user: { id: '1', telegram_id: '1001234567', first_name: 'Chidi', last_name: 'Okonkwo', username: 'chidi_o' }, status: 'approved', bank_name: 'Zenith Bank', account_number: '1023456789', account_name: 'Chidi Okonkwo', submitted_at: '2025-11-15T10:00:00Z', reviewed_at: '2025-11-16T09:00:00Z', rejection_reason: null },
-  { id: 'kyc6', user: { id: '3', telegram_id: '1001234569', first_name: 'Emeka', last_name: 'Eze', username: 'emeka_eze' }, status: 'approved', bank_name: 'GTBank', account_number: '0345678901', account_name: 'Emeka Eze', submitted_at: '2025-10-08T09:00:00Z', reviewed_at: '2025-10-09T10:00:00Z', rejection_reason: null },
-  { id: 'kyc7', user: { id: '7', telegram_id: '1001234573', first_name: 'Tunde', last_name: 'Badmus', username: 'tunde_b' }, status: 'rejected', bank_name: 'Polaris Bank', account_number: '4056789012', account_name: 'T Badmus', submitted_at: '2026-02-12T09:00:00Z', reviewed_at: '2026-02-13T10:00:00Z', rejection_reason: 'Account name does not match provided name.' },
-  { id: 'kyc8', user: { id: '6', telegram_id: '1001234572', first_name: 'Sola', last_name: 'Adesanya', username: 'sola_a' }, status: 'approved', bank_name: 'Stanbic IBTC', account_number: '0056789012', account_name: 'Sola Adesanya', submitted_at: '2025-11-01T10:00:00Z', reviewed_at: '2025-11-02T09:00:00Z', rejection_reason: null },
-  { id: 'kyc9', user: { id: '8', telegram_id: '1001234574', first_name: 'Kemi', last_name: 'Okafor', username: 'kemi_ok' }, status: 'approved', bank_name: 'Fidelity Bank', account_number: '6067890123', account_name: 'Kemi Okafor', submitted_at: '2025-11-10T11:00:00Z', reviewed_at: '2025-11-11T09:00:00Z', rejection_reason: null },
-  { id: 'kyc10', user: { id: '10', telegram_id: '1001234576', first_name: 'Femi', last_name: 'Adewale', username: 'femi_a' }, status: 'approved', bank_name: 'Access Bank', account_number: '0078901234', account_name: 'Femi Adewale', submitted_at: '2025-10-20T08:00:00Z', reviewed_at: '2025-10-21T09:00:00Z', rejection_reason: null },
-  { id: 'kyc11', user: { id: '11', telegram_id: '1001234577', first_name: 'Chioma', last_name: 'Igwe', username: 'chioma_i' }, status: 'approved', bank_name: 'GTBank', account_number: '0089012345', account_name: 'Chioma Igwe', submitted_at: '2025-12-22T09:00:00Z', reviewed_at: '2025-12-23T10:00:00Z', rejection_reason: null },
-  { id: 'kyc12', user: { id: '13', telegram_id: '1001234579', first_name: 'Adaeze', last_name: 'Okonma', username: 'adaeze_o' }, status: 'approved', bank_name: 'Zenith Bank', account_number: '1098765432', account_name: 'Adaeze Okonma', submitted_at: '2025-11-27T09:00:00Z', reviewed_at: '2025-11-28T10:00:00Z', rejection_reason: null },
-  { id: 'kyc13', user: { id: '14', telegram_id: '1001234580', first_name: 'Kayode', last_name: 'Salami', username: 'kayode_s' }, status: 'approved', bank_name: 'UBA', account_number: '2087654321', account_name: 'Kayode Salami', submitted_at: '2025-09-12T09:00:00Z', reviewed_at: '2025-09-13T10:00:00Z', rejection_reason: null },
-  { id: 'kyc14', user: { id: '17', telegram_id: '1001234583', first_name: 'Maryam', last_name: 'Bello', username: 'maryam_b' }, status: 'approved', bank_name: 'First Bank', account_number: '3076543210', account_name: 'Maryam Bello', submitted_at: '2025-12-12T10:00:00Z', reviewed_at: '2025-12-13T09:00:00Z', rejection_reason: null },
-  { id: 'kyc15', user: { id: '19', telegram_id: '1001234585', first_name: 'Grace', last_name: 'Oduola', username: 'grace_od' }, status: 'approved', bank_name: 'Access Bank', account_number: '0065432109', account_name: 'Grace Oduola', submitted_at: '2025-12-02T09:00:00Z', reviewed_at: '2025-12-03T10:00:00Z', rejection_reason: null },
-]
-
-// Withdrawals (15 records)
-export const MOCK_WITHDRAWALS: WithdrawalRecord[] = [
-  { id: 'wd1', user: { id: '1', first_name: 'Chidi', last_name: 'Okonkwo', username: 'chidi_o' }, amount: '15000', status: 'pending', bank_name: 'Zenith Bank', account_number: '1023456789', account_name: 'Chidi Okonkwo', provider_reference: null, created_at: '2026-05-06T09:00:00Z' },
-  { id: 'wd2', user: { id: '3', first_name: 'Emeka', last_name: 'Eze', username: 'emeka_eze' }, amount: '50000', status: 'pending', bank_name: 'GTBank', account_number: '0345678901', account_name: 'Emeka Eze', provider_reference: null, created_at: '2026-05-06T08:30:00Z' },
-  { id: 'wd3', user: { id: '6', first_name: 'Sola', last_name: 'Adesanya', username: 'sola_a' }, amount: '25000', status: 'processing', bank_name: 'Stanbic IBTC', account_number: '0056789012', account_name: 'Sola Adesanya', provider_reference: 'PST20260506001', created_at: '2026-05-05T20:00:00Z' },
-  { id: 'wd4', user: { id: '8', first_name: 'Kemi', last_name: 'Okafor', username: 'kemi_ok' }, amount: '35000', status: 'completed', bank_name: 'Fidelity Bank', account_number: '6067890123', account_name: 'Kemi Okafor', provider_reference: 'PST20260505001', created_at: '2026-05-05T14:00:00Z' },
-  { id: 'wd5', user: { id: '10', first_name: 'Femi', last_name: 'Adewale', username: 'femi_a' }, amount: '75000', status: 'completed', bank_name: 'Access Bank', account_number: '0078901234', account_name: 'Femi Adewale', provider_reference: 'PST20260504002', created_at: '2026-05-04T16:00:00Z' },
-  { id: 'wd6', user: { id: '14', first_name: 'Kayode', last_name: 'Salami', username: 'kayode_s' }, amount: '120000', status: 'pending', bank_name: 'UBA', account_number: '2087654321', account_name: 'Kayode Salami', provider_reference: null, created_at: '2026-05-06T07:00:00Z' },
-  { id: 'wd7', user: { id: '20', first_name: 'Seun', last_name: 'Ogundimu', username: 'seun_og' }, amount: '200000', status: 'pending', bank_name: 'Zenith Bank', account_number: '1045678901', account_name: 'Seun Ogundimu', provider_reference: null, created_at: '2026-05-06T06:00:00Z' },
-  { id: 'wd8', user: { id: '13', first_name: 'Adaeze', last_name: 'Okonma', username: 'adaeze_o' }, amount: '40000', status: 'failed', bank_name: 'Zenith Bank', account_number: '1098765432', account_name: 'Adaeze Okonma', provider_reference: 'PST20260503003', created_at: '2026-05-03T10:00:00Z' },
-  { id: 'wd9', user: { id: '17', first_name: 'Maryam', last_name: 'Bello', username: 'maryam_b' }, amount: '20000', status: 'completed', bank_name: 'First Bank', account_number: '3076543210', account_name: 'Maryam Bello', provider_reference: 'PST20260502001', created_at: '2026-05-02T12:00:00Z' },
-  { id: 'wd10', user: { id: '11', first_name: 'Chioma', last_name: 'Igwe', username: 'chioma_i' }, amount: '18000', status: 'completed', bank_name: 'GTBank', account_number: '0089012345', account_name: 'Chioma Igwe', provider_reference: 'PST20260501002', created_at: '2026-05-01T14:00:00Z' },
-  { id: 'wd11', user: { id: '19', first_name: 'Grace', last_name: 'Oduola', username: 'grace_od' }, amount: '12000', status: 'pending', bank_name: 'Access Bank', account_number: '0065432109', account_name: 'Grace Oduola', provider_reference: null, created_at: '2026-05-06T10:00:00Z' },
-  { id: 'wd12', user: { id: '4', first_name: 'Amaka', last_name: 'Nwosu', username: 'amaka_n' }, amount: '3000', status: 'completed', bank_name: 'Sterling Bank', account_number: '8012345678', account_name: 'Amaka Nwosu', provider_reference: 'PST20260430001', created_at: '2026-04-30T09:00:00Z' },
-  { id: 'wd13', user: { id: '3', first_name: 'Emeka', last_name: 'Eze', username: 'emeka_eze' }, amount: '100000', status: 'completed', bank_name: 'GTBank', account_number: '0345678901', account_name: 'Emeka Eze', provider_reference: 'PST20260429002', created_at: '2026-04-29T12:00:00Z' },
-  { id: 'wd14', user: { id: '2', first_name: 'Ngozi', last_name: 'Adeyemi', username: 'ngozi_a' }, amount: '8000', status: 'failed', bank_name: 'GTBank', account_number: '0123456789', account_name: 'Ngozi Adeyemi', provider_reference: 'PST20260428001', created_at: '2026-04-28T10:00:00Z' },
-  { id: 'wd15', user: { id: '8', first_name: 'Kemi', last_name: 'Okafor', username: 'kemi_ok' }, amount: '45000', status: 'pending', bank_name: 'Fidelity Bank', account_number: '6067890123', account_name: 'Kemi Okafor', provider_reference: null, created_at: '2026-05-06T05:00:00Z' },
-]
-
-// RTP Tiers (3 tiers)
-export const MOCK_RTP_TIERS: RTPTierFull[] = [
+export const MOCK_RTP_TIERS: RTPWheel[] = [
   {
     id: '1',
-    name: 'Standard',
+    name: 'Entry Stake (₦200–₦499)',
     wheel_type: 'standard',
     min_stake: '200',
     max_stake: '499',
-    house_edge: '20',
-    rtp_target: '80',
+    rtp_target: '80.00',
+    computed_rtp: '79.50',
+    house_edge: '20.50',
     is_active: true,
-    created_by: 'John Mudiagha',
-    outcomes: [
-      { id: '1', label: 'Loss', multiplier: '0', probability: '30', color: '#2a2a2a', showCoin: false },
-      { id: '2', label: '0.5×', multiplier: '0.5', probability: '20', color: '#374151', showCoin: false },
-      { id: '3', label: '1×', multiplier: '1', probability: '20', color: '#455A64', showCoin: true },
-      { id: '4', label: '2×', multiplier: '2', probability: '20', color: '#1A237E', showCoin: true },
-      { id: '5', label: '5×', multiplier: '5', probability: '10', color: '#E65100', showCoin: true },
+    total_spins: 1250,
+    segments: [
+      { position: 0, label: 'Loss', multiplier: '0.0000', probability_weight: 30, probability_pct: 30.0, color: '#3a3a3a', is_active: true },
+      { position: 1, label: '0.5x', multiplier: '0.5000', probability_weight: 20, probability_pct: 20.0, color: '#5a5a5a', is_active: true },
+      { position: 2, label: '1x', multiplier: '1.0000', probability_weight: 20, probability_pct: 20.0, color: '#455A64', is_active: true },
+      { position: 3, label: '2x', multiplier: '2.0000', probability_weight: 20, probability_pct: 20.0, color: '#1A237E', is_active: true },
+      { position: 4, label: '5x', multiplier: '5.0000', probability_weight: 10, probability_pct: 10.0, color: '#C9961A', is_active: true },
     ],
   },
   {
     id: '2',
-    name: 'Power',
+    name: 'Power Stake (₦500–₦1,999)',
     wheel_type: 'power',
     min_stake: '500',
     max_stake: '1999',
-    house_edge: '20',
-    rtp_target: '80',
+    rtp_target: '80.00',
+    computed_rtp: '80.20',
+    house_edge: '19.80',
     is_active: true,
-    created_by: 'John Mudiagha',
-    outcomes: [
-      { id: '6', label: 'Loss', multiplier: '0', probability: '40', color: '#2a2a2a', showCoin: false },
-      { id: '7', label: '1×', multiplier: '1', probability: '20', color: '#455A64', showCoin: true },
-      { id: '8', label: '3×', multiplier: '3', probability: '20', color: '#E86D1F', showCoin: true },
-      { id: '9', label: '5×', multiplier: '5', probability: '15', color: '#F5A623', showCoin: true },
-      { id: '10', label: '10×', multiplier: '10', probability: '5', color: '#C9961A', showCoin: true },
+    total_spins: 870,
+    segments: [
+      { position: 0, label: 'Loss', multiplier: '0.0000', probability_weight: 40, probability_pct: 40.0, color: '#3a3a3a', is_active: true },
+      { position: 1, label: '1x', multiplier: '1.0000', probability_weight: 20, probability_pct: 20.0, color: '#455A64', is_active: true },
+      { position: 2, label: '3x', multiplier: '3.0000', probability_weight: 20, probability_pct: 20.0, color: '#E86D1F', is_active: true },
+      { position: 3, label: '5x', multiplier: '5.0000', probability_weight: 15, probability_pct: 15.0, color: '#F5A623', is_active: true },
+      { position: 4, label: '10x', multiplier: '10.0000', probability_weight: 5, probability_pct: 5.0, color: '#C9961A', is_active: true },
     ],
   },
   {
     id: '3',
-    name: 'Mega',
+    name: 'Mega Stake (₦2,000+)',
     wheel_type: 'mega',
     min_stake: '2000',
     max_stake: '100000',
-    house_edge: '20',
-    rtp_target: '80',
+    rtp_target: '80.00',
+    computed_rtp: '78.00',
+    house_edge: '22.00',
     is_active: false,
-    created_by: 'John Mudiagha',
-    outcomes: [
-      { id: '11', label: 'Loss', multiplier: '0', probability: '50', color: '#2a2a2a', showCoin: false },
-      { id: '12', label: '2×', multiplier: '2', probability: '20', color: '#1558BF', showCoin: true },
-      { id: '13', label: '5×', multiplier: '5', probability: '15', color: '#1E73E8', showCoin: true },
-      { id: '14', label: '10×', multiplier: '10', probability: '10', color: '#0D47A1', showCoin: true },
-      { id: '15', label: '50×', multiplier: '50', probability: '5', color: '#F5A623', showCoin: true },
+    total_spins: 120,
+    segments: [
+      { position: 0, label: 'Loss', multiplier: '0.0000', probability_weight: 50, probability_pct: 50.0, color: '#3a3a3a', is_active: true },
+      { position: 1, label: '2x', multiplier: '2.0000', probability_weight: 20, probability_pct: 20.0, color: '#1558BF', is_active: true },
+      { position: 2, label: '5x', multiplier: '5.0000', probability_weight: 15, probability_pct: 15.0, color: '#1E73E8', is_active: true },
+      { position: 3, label: '10x', multiplier: '10.0000', probability_weight: 10, probability_pct: 10.0, color: '#0D47A1', is_active: true },
+      { position: 4, label: '50x', multiplier: '50.0000', probability_weight: 5, probability_pct: 5.0, color: '#F5A623', is_active: true },
     ],
   },
 ]
 
-// Audit log (10 entries)
+// ── Users ─────────────────────────────────────────────────────────────────────
+
+export const MOCK_USERS: AdminUser[] = [
+  { id: '41df4f5d-0001-4fc7-b4c5-bd51cde8c040', telegram_id: 1001234567, name: 'Chidi Okonkwo', phone_number: '+2348012345678', registered_on: 'Nov 12, 2025', registered_via: 'Telegram', balance: '45000.00', staked: '89500', kyc_status: 'Done', risk: 'Low', is_active: true },
+  { id: '41df4f5d-0002-4fc7-b4c5-bd51cde8c040', telegram_id: 1001234568, name: 'Ngozi Adeyemi', phone_number: '+2348023456789', registered_on: 'Dec 1, 2025', registered_via: 'Telegram', balance: '12000.00', staked: '15600', kyc_status: 'Pending', risk: 'Low', is_active: true },
+  { id: '41df4f5d-0003-4fc7-b4c5-bd51cde8c040', telegram_id: 1001234569, name: 'Emeka Eze', phone_number: '+2348034567890', registered_on: 'Oct 5, 2025', registered_via: 'Telegram', balance: '230000.00', staked: '556000', kyc_status: 'Done', risk: 'Medium', is_active: true },
+  { id: '41df4f5d-0004-4fc7-b4c5-bd51cde8c040', telegram_id: 1001234570, name: 'Amaka Nwosu', phone_number: '+2348045678901', registered_on: 'Jan 15, 2026', registered_via: 'Telegram', balance: '5000.00', staked: '3200', kyc_status: 'Pending', risk: 'Low', is_active: true },
+  { id: '41df4f5d-0005-4fc7-b4c5-bd51cde8c040', telegram_id: 1001234571, name: 'Ifeanyi Obi', phone_number: '+2348056789012', registered_on: 'Sep 20, 2025', registered_via: 'Telegram', balance: '0.00', staked: '1250000', kyc_status: 'Done', risk: 'High', is_active: false },
+  { id: '41df4f5d-0006-4fc7-b4c5-bd51cde8c040', telegram_id: 1001234572, name: 'Sola Adesanya', phone_number: '+2348067890123', registered_on: 'Oct 30, 2025', registered_via: 'Telegram', balance: '67000.00', staked: '178000', kyc_status: 'Done', risk: 'Low', is_active: true },
+  { id: '41df4f5d-0007-4fc7-b4c5-bd51cde8c040', telegram_id: 1001234573, name: 'Tunde Badmus', phone_number: '+2348078901234', registered_on: 'Feb 10, 2026', registered_via: 'Telegram', balance: '2500.00', staked: '4800', kyc_status: 'Rejected', risk: 'Low', is_active: true },
+  { id: '41df4f5d-0008-4fc7-b4c5-bd51cde8c040', telegram_id: 1001234574, name: 'Kemi Okafor', phone_number: '+2348089012345', registered_on: 'Nov 8, 2025', registered_via: 'Telegram', balance: '98000.00', staked: '310000', kyc_status: 'Done', risk: 'Medium', is_active: true },
+  { id: '41df4f5d-0009-4fc7-b4c5-bd51cde8c040', telegram_id: 1001234575, name: 'Dayo Adeleke', phone_number: '+2348090123456', registered_on: 'Mar 1, 2026', registered_via: 'Telegram', balance: '8000.00', staked: '9500', kyc_status: 'Pending', risk: 'Low', is_active: true },
+  { id: '41df4f5d-0010-4fc7-b4c5-bd51cde8c040', telegram_id: 1001234576, name: 'Femi Adewale', phone_number: '+2348001234567', registered_on: 'Oct 18, 2025', registered_via: 'Telegram', balance: '175000.00', staked: '445000', kyc_status: 'Done', risk: 'Medium', is_active: true },
+]
+
+export const MOCK_USER_DETAIL: AdminUserDetail = {
+  id: '41df4f5d-0001-4fc7-b4c5-bd51cde8c040',
+  telegram_id: 1001234567,
+  name: 'Chidi Okonkwo',
+  registered_on: 'Nov 12, 2025',
+  registered_via: 'Telegram',
+  last_login: 'May 6, 2026 20:40',
+  cash_balance: '45000.00',
+  coin_balance: '1250.00',
+  total_balance: '46250.00',
+  staked: '89500',
+  kyc: {
+    overall_status: 'approved',
+    display_status: 'Done',
+    personal_info_status: 'verified',
+    bank_account_status: 'verified',
+    document_status: 'verified',
+    submitted_at: 'Nov 15, 2025',
+  },
+  risk: 'Low',
+  bank_account: {
+    bank_name: 'Zenith Bank',
+    account_name: 'CHIDI OKONKWO',
+    account_number_masked: '****6789',
+    verified_at: 'Nov 16, 2025',
+  },
+  is_active: true,
+  is_staff: false,
+}
+
+// ── User spins ────────────────────────────────────────────────────────────────
+
+export const MOCK_USER_SPINS: UserSpinRecord[] = [
+  { id: 'usp1', wheel: 'Standard Wheel', stake: '500', result_label: '2x Multiplier', multiplier: '2.0000x', outcome: 'win', win_value: '1000.00', is_welcome_spin: false, date: 'May 5, 2026' },
+  { id: 'usp2', wheel: 'Standard Wheel', stake: '200', result_label: 'Loss', multiplier: '0.0000x', outcome: 'loss', win_value: '0.00', is_welcome_spin: false, date: 'May 5, 2026' },
+  { id: 'usp3', wheel: 'Power Wheel', stake: '1000', result_label: '5x Multiplier', multiplier: '5.0000x', outcome: 'win', win_value: '5000.00', is_welcome_spin: false, date: 'May 5, 2026' },
+  { id: 'usp4', wheel: 'Standard Wheel', stake: '500', result_label: 'Loss', multiplier: '0.0000x', outcome: 'loss', win_value: '0.00', is_welcome_spin: false, date: 'May 5, 2026' },
+  { id: 'usp5', wheel: 'Power Wheel', stake: '2000', result_label: '10x Multiplier', multiplier: '10.0000x', outcome: 'win', win_value: '20000.00', is_welcome_spin: false, date: 'May 4, 2026' },
+  { id: 'usp6', wheel: 'Standard Wheel', stake: '300', result_label: 'Loss', multiplier: '0.0000x', outcome: 'loss', win_value: '0.00', is_welcome_spin: false, date: 'May 3, 2026' },
+]
+
+// ── User transactions ─────────────────────────────────────────────────────────
+
+export const MOCK_USER_TRANSACTIONS: UserTransaction[] = [
+  { id: 'tx1', type: 'deposit', label: 'Cash Deposit', amount: '5000.00', is_credit: true, balance_type: 'cash', balance_before: '40000.00', balance_after: '45000.00', status: 'completed', date: 'May 5, 2026' },
+  { id: 'tx2', type: 'spin_stake', label: 'Spin Stake', amount: '-500.00', is_credit: false, balance_type: 'cash', balance_before: '45000.00', balance_after: '44500.00', status: 'completed', date: 'May 5, 2026' },
+  { id: 'tx3', type: 'spin_win', label: 'Spin Win', amount: '1000.00', is_credit: true, balance_type: 'cash', balance_before: '44500.00', balance_after: '45500.00', status: 'completed', date: 'May 5, 2026' },
+  { id: 'tx4', type: 'withdrawal', label: 'Cash Withdrawal', amount: '-3000.00', is_credit: false, balance_type: 'cash', balance_before: '45500.00', balance_after: '42500.00', status: 'completed', date: 'May 5, 2026' },
+  { id: 'tx5', type: 'deposit', label: 'Cash Deposit', amount: '10000.00', is_credit: true, balance_type: 'cash', balance_before: '30000.00', balance_after: '40000.00', status: 'completed', date: 'May 4, 2026' },
+]
+
+// ── KYC Queue ─────────────────────────────────────────────────────────────────
+
+export const MOCK_KYC: AdminKYCQueueItem[] = [
+  {
+    id: 'kyc1',
+    user_id: '41df4f5d-0002-4fc7-b4c5-bd51cde8c040',
+    telegram_id: 1001234568,
+    name: 'NGOZI ADEYEMI',
+    overall_status: 'partial',
+    can_withdraw: false,
+    sections: {
+      personal_info: { status: 'verified', reason: '' },
+      bank_account: { status: 'requires_correction', reason: 'Bank account name does not match identity.', bank_name: 'GTBank', account_name: 'N ADEYEMI', account_masked: '****6789' },
+      document: { status: 'verified', reason: '', filename: 'utility_bill.pdf', document_type: 'utility_bill', file_url: '#' },
+    },
+    submitted_at: 'May 3, 2026',
+    last_resubmission_at: null,
+  },
+  {
+    id: 'kyc2',
+    user_id: '41df4f5d-0009-4fc7-b4c5-bd51cde8c040',
+    telegram_id: 1001234575,
+    name: 'DAYO ADELEKE',
+    overall_status: 'pending',
+    can_withdraw: false,
+    sections: {
+      personal_info: { status: 'pending', reason: '' },
+      bank_account: { status: 'pending', reason: '', bank_name: 'Access Bank', account_name: 'DAYO ADELEKE', account_masked: '****7890' },
+      document: { status: 'pending', reason: '', filename: 'id_card.jpg', document_type: 'national_id', file_url: '#' },
+    },
+    submitted_at: 'May 2, 2026',
+    last_resubmission_at: null,
+  },
+  {
+    id: 'kyc3',
+    user_id: '41df4f5d-0007-4fc7-b4c5-bd51cde8c040',
+    telegram_id: 1001234573,
+    name: 'TUNDE BADMUS',
+    overall_status: 'rejected',
+    can_withdraw: false,
+    sections: {
+      personal_info: { status: 'verified', reason: '' },
+      bank_account: { status: 'rejected', reason: 'Account name does not match provided identity.', bank_name: 'Polaris Bank', account_name: 'T BADMUS', account_masked: '****2345' },
+      document: { status: 'verified', reason: '' },
+    },
+    submitted_at: 'Feb 12, 2026',
+    last_resubmission_at: null,
+  },
+]
+
+// ── Withdrawals ───────────────────────────────────────────────────────────────
+
+export const MOCK_WITHDRAWALS: AdminWithdrawal[] = [
+  { id: 'wd1', name: 'Chidi Okonkwo', user_id: '41df4f5d-0001-4fc7-b4c5-bd51cde8c040', amount: '15000.00', net_amount: '15000.00', bank: 'Zenith', account_masked: '****6789', type: 'Small', risk: 'Low', status: 'pending_review', status_display: 'Pending Review (Admin)', requires_review: true, forced_manual_review: true, reference: 'wd_abc001', requested_at: 'May 6, 2026 09:00', completed_at: null, failure_reason: '' },
+  { id: 'wd2', name: 'Emeka Eze', user_id: '41df4f5d-0003-4fc7-b4c5-bd51cde8c040', amount: '50000.00', net_amount: '50000.00', bank: 'GTBank', account_masked: '****8901', type: 'Medium', risk: 'Medium', status: 'pending_review', status_display: 'Pending Review (Admin)', requires_review: true, forced_manual_review: false, reference: 'wd_abc002', requested_at: 'May 6, 2026 08:30', completed_at: null, failure_reason: '' },
+  { id: 'wd3', name: 'Sola Adesanya', user_id: '41df4f5d-0006-4fc7-b4c5-bd51cde8c040', amount: '25000.00', net_amount: '25000.00', bank: 'Stanbic IBTC', account_masked: '****9012', type: 'Small', risk: 'Low', status: 'processing', status_display: 'Processing', requires_review: false, forced_manual_review: false, reference: 'wd_abc003', requested_at: 'May 5, 2026 20:00', completed_at: null, failure_reason: '' },
+  { id: 'wd4', name: 'Kemi Okafor', user_id: '41df4f5d-0008-4fc7-b4c5-bd51cde8c040', amount: '35000.00', net_amount: '35000.00', bank: 'Fidelity', account_masked: '****0123', type: 'Small', risk: 'Low', status: 'completed', status_display: 'Completed', requires_review: false, forced_manual_review: false, reference: 'wd_abc004', requested_at: 'May 5, 2026 14:00', completed_at: 'May 5, 2026 15:30', failure_reason: '' },
+  { id: 'wd5', name: 'Kayode Salami', user_id: '41df4f5d-0010-4fc7-b4c5-bd51cde8c040', amount: '120000.00', net_amount: '120000.00', bank: 'UBA', account_masked: '****4321', type: 'Large', risk: 'High', status: 'pending_review', status_display: 'Pending Review (Admin)', requires_review: true, forced_manual_review: true, reference: 'wd_abc005', requested_at: 'May 6, 2026 07:00', completed_at: null, failure_reason: '' },
+  { id: 'wd6', name: 'Ngozi Adeyemi', user_id: '41df4f5d-0002-4fc7-b4c5-bd51cde8c040', amount: '8000.00', net_amount: '8000.00', bank: 'GTBank', account_masked: '****6789', type: 'Small', risk: 'Low', status: 'failed', status_display: 'Failed', requires_review: false, forced_manual_review: false, reference: 'wd_abc006', requested_at: 'Apr 28, 2026 10:00', completed_at: null, failure_reason: 'Bank transfer failed' },
+]
+
+// ── Fraud ─────────────────────────────────────────────────────────────────────
+
+export const MOCK_FRAUD: FraudData = {
+  total_flagged: 3,
+  flagged_users: [
+    { user_id: '41df4f5d-0005-4fc7-b4c5-bd51cde8c040', name: 'Ifeanyi Obi', telegram_id: 1001234571, flag: 'High withdrawal frequency (3 in 7 days)', risk: 'High', flag_type: 'withdrawal_frequency' },
+    { user_id: '41df4f5d-0010-4fc7-b4c5-bd51cde8c040', name: 'Kayode Salami', telegram_id: 1001234576, flag: 'Large win ₦120,000', risk: 'High', flag_type: 'large_win' },
+    { user_id: '41df4f5d-0007-4fc7-b4c5-bd51cde8c040', name: 'Tunde Badmus', telegram_id: 1001234573, flag: 'KYC section rejected', risk: 'Medium', flag_type: 'kyc_rejected' },
+  ],
+}
+
+// ── Audit Log ─────────────────────────────────────────────────────────────────
+
 export const MOCK_AUDIT_LOG: AuditLogEntry[] = [
-  { id: 'al1', admin_user: 'John Mudiagha', action: 'BAN_USER', target_model: 'User', target_id: '5', details: { reason: 'Suspicious activity pattern' }, created_at: '2026-05-06T09:30:00Z' },
-  { id: 'al2', admin_user: 'John Mudiagha', action: 'APPROVE_KYC', target_model: 'KYCRecord', target_id: 'kyc6', details: { bank: 'GTBank' }, created_at: '2026-05-05T14:20:00Z' },
-  { id: 'al3', admin_user: 'John Mudiagha', action: 'REJECT_WITHDRAWAL', target_model: 'Withdrawal', target_id: 'wd8', details: { reason: 'Account verification failed' }, created_at: '2026-05-05T11:00:00Z' },
-  { id: 'al4', admin_user: 'John Mudiagha', action: 'UPDATE_RTP_TIER', target_model: 'RTPTier', target_id: '2', details: { changed: 'rtp_target', from: '75', to: '80' }, created_at: '2026-05-04T16:45:00Z' },
-  { id: 'al5', admin_user: 'John Mudiagha', action: 'APPROVE_WITHDRAWAL', target_model: 'Withdrawal', target_id: 'wd4', details: { amount: '35000' }, created_at: '2026-05-05T13:00:00Z' },
-  { id: 'al6', admin_user: 'John Mudiagha', action: 'BAN_USER', target_model: 'User', target_id: '16', details: { reason: 'Multiple accounts detected' }, created_at: '2026-05-03T10:00:00Z' },
-  { id: 'al7', admin_user: 'John Mudiagha', action: 'CREATE_RTP_TIER', target_model: 'RTPTier', target_id: '3', details: { name: 'Mega', min_stake: '2000' }, created_at: '2026-05-02T09:00:00Z' },
-  { id: 'al8', admin_user: 'John Mudiagha', action: 'REJECT_KYC', target_model: 'KYCRecord', target_id: 'kyc7', details: { reason: 'Name mismatch' }, created_at: '2026-02-13T10:00:00Z' },
-  { id: 'al9', admin_user: 'John Mudiagha', action: 'UNBAN_USER', target_model: 'User', target_id: '3', details: { reason: 'Appeal approved' }, created_at: '2026-01-20T11:00:00Z' },
-  { id: 'al10', admin_user: 'John Mudiagha', action: 'APPROVE_WITHDRAWAL', target_model: 'Withdrawal', target_id: 'wd5', details: { amount: '75000' }, created_at: '2026-05-04T15:00:00Z' },
+  { id: 'al1', type: 'withdrawal', action: 'Withdrawal approved', detail: '₦15,000 → Zenith Bank', target_user: 'Chidi Okonkwo', target_user_id: '41df4f5d-0001-4fc7-b4c5-bd51cde8c040', performed_by: 'John Mudiagha', notes: 'Manually verified', timestamp: '2026-05-06T09:30:00+01:00', timestamp_display: 'May 6, 2026 09:30' },
+  { id: 'al2', type: 'kyc', action: 'KYC approved', detail: 'Overall: approved', target_user: 'Chidi Okonkwo', performed_by: 'John Mudiagha', timestamp: '2026-05-05T14:20:00+01:00', timestamp_display: 'May 5, 2026 14:20' },
+  { id: 'al3', type: 'withdrawal', action: 'Withdrawal rejected', detail: '₦8,000 — Account verification failed', target_user: 'Ngozi Adeyemi', target_user_id: '41df4f5d-0002-4fc7-b4c5-bd51cde8c040', performed_by: 'John Mudiagha', timestamp: '2026-05-05T11:00:00+01:00', timestamp_display: 'May 5, 2026 11:00' },
+  { id: 'al4', type: 'rtp', action: 'RTP updated', detail: 'Power Wheel — rtp_target 75 → 80', target_user: '', performed_by: 'John Mudiagha', timestamp: '2026-05-04T16:45:00+01:00', timestamp_display: 'May 4, 2026 16:45' },
+  { id: 'al5', type: 'kyc', action: 'KYC rejected', detail: 'bank_account — Name mismatch', target_user: 'Tunde Badmus', target_user_id: '41df4f5d-0007-4fc7-b4c5-bd51cde8c040', performed_by: 'John Mudiagha', timestamp: '2026-02-13T10:00:00+01:00', timestamp_display: 'Feb 13, 2026 10:00' },
+]
+
+// Revenue breakdown for donut chart (used directly in FinancialsPage from spins_breakdown)
+export const MOCK_REVENUE_BREAKDOWN = [
+  { name: 'Staked', value: 500, percent: 50, color: '#1A237E' },
+  { name: 'Fees', value: 150, percent: 15, color: '#C9961A' },
+  { name: 'Won', value: 350, percent: 35, color: '#3de8c4' },
 ]
