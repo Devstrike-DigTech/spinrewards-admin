@@ -16,11 +16,12 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useAuthStore } from '@/store/authStore'
+import { authApi } from '@/api/index'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 
 export function Sidebar() {
-  const { adminUsername, clearAuth } = useAuthStore()
+  const { adminUser, tokens, clearAuth } = useAuthStore()
   const navigate = useNavigate()
   const location = useLocation()
 
@@ -28,7 +29,14 @@ export function Sidebar() {
     location.pathname === '/financials' || location.pathname === '/rtp'
   const [financialsOpen, setFinancialsOpen] = useState(financialsExpanded)
 
-  function handleLogout() {
+  async function handleLogout() {
+    try {
+      if (tokens?.refresh_token) {
+        await authApi.logout(tokens.refresh_token)
+      }
+    } catch {
+      // Proceed with local logout even if the API call fails
+    }
     clearAuth()
     navigate('/login')
   }
@@ -178,9 +186,16 @@ export function Sidebar() {
             className="flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold text-white"
             style={{ background: '#1A237E' }}
           >
-            {adminUsername ? adminUsername[0].toUpperCase() : 'A'}
+            {adminUser?.display_name?.[0]?.toUpperCase() ?? 'A'}
           </div>
-          <p className="truncate text-xs text-muted-foreground">{adminUsername}</p>
+          <div className="min-w-0">
+            <p className="truncate text-xs font-medium text-foreground">
+              {adminUser?.display_name ?? 'Admin'}
+            </p>
+            <p className="truncate text-[10px] text-muted-foreground">
+              {adminUser?.email ?? ''}
+            </p>
+          </div>
         </div>
         <Button
           variant="ghost"

@@ -1,12 +1,12 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import type { AdminTokens } from '@/types'
+import type { AdminTokens, AdminAccount } from '@/types'
 
 interface AuthState {
   tokens: AdminTokens | null
-  adminUsername: string | null
+  adminUser: AdminAccount | null
   isAuthenticated: boolean
-  setAuth: (tokens: AdminTokens, username: string) => void
+  setAuth: (tokens: AdminTokens, user: AdminAccount) => void
   setTokens: (tokens: AdminTokens) => void
   clearAuth: () => void
 }
@@ -15,19 +15,17 @@ export const useAuthStore = create<AuthState>()(
   persist(
     (set) => ({
       tokens: null,
-      adminUsername: null,
+      adminUser: null,
       isAuthenticated: false,
 
-      setAuth: (tokens, username) =>
-        set({ tokens, adminUsername: username, isAuthenticated: true }),
+      setAuth: (tokens, user) =>
+        set({ tokens, adminUser: user, isAuthenticated: true }),
 
       setTokens: (tokens) => set({ tokens }),
 
       clearAuth: () =>
-        set({ tokens: null, adminUsername: null, isAuthenticated: false }),
+        set({ tokens: null, adminUser: null, isAuthenticated: false }),
     }),
-    {
-      name: 'spinrewards-admin-auth',
-    }
+    { name: 'spinrewards-admin-auth' }
   )
 )

@@ -16,7 +16,7 @@ const PAGE_TITLES: Record<string, string> = {
 
 export function AppShell() {
   const location = useLocation()
-  const { adminUsername } = useAuthStore()
+  const { adminUser } = useAuthStore()
 
   const pathBase = '/' + location.pathname.split('/')[1]
   const pageTitle = PAGE_TITLES[pathBase] ?? 'Dashboard'
@@ -33,12 +33,12 @@ export function AppShell() {
             <span className="text-sm font-semibold text-foreground">{pageTitle}</span>
           </div>
           <div className="flex items-center gap-3">
-            <span className="text-sm text-muted-foreground hidden sm:block">{adminUsername}</span>
+            <span className="text-sm text-muted-foreground hidden sm:block">{adminUser?.display_name}</span>
             <div
               className="flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold text-white"
               style={{ background: '#1A237E' }}
             >
-              {adminUsername ? adminUsername[0].toUpperCase() : 'A'}
+              {adminUser?.display_name?.[0]?.toUpperCase() ?? 'A'}
             </div>
           </div>
         </header>

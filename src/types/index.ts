@@ -1,203 +1,359 @@
 // Auth
 export interface AdminTokens {
-  access: string
-  refresh: string
+  access_token: string
+  refresh_token: string
 }
 
-// Users
-export interface AdminUser {
+export interface AdminAccount {
   id: string
-  telegram_id: string
-  first_name: string
-  last_name: string
-  username: string
-  phone_number: string
-  is_banned: boolean
-  is_kyc_verified: boolean
-  kyc_status: 'unverified' | 'pending' | 'approved' | 'rejected'
-  referral_code: string
-  coin_balance: string
-  cash_balance: string
-  total_spins: number
+  email: string
+  display_name: string
+  is_staff: boolean
+  is_superuser: boolean
+}
+
+export interface AdminLoginResponse {
+  access_token: string
+  refresh_token: string
+  token_type: string
+  admin: AdminAccount
+}
+
+// ── Dashboard ────────────────────────────────────────────────────────────────
+
+export interface DashboardKPIs {
+  total_revenue: string
+  total_revenue_change_pct: string
+  net_profit: string
+  current_rtp: string
+  active_users: number
+  active_users_change_pct: string
+  new_users_today: number
+}
+
+export interface ProfitTrendPoint {
+  month: string
+  year: number
+  value: string
+}
+
+export interface RecentSpin {
+  id: string
+  user: string
+  stake: string
+  result: string
+  multiplier: string
+  win_value: string
+  outcome: 'win' | 'loss'
+  date: string
+}
+
+export interface TopWinner {
+  user: string
+  win_value: string
+}
+
+export interface AdminDashboard {
+  kpis: DashboardKPIs
+  profit_trend: ProfitTrendPoint[]
+  recent_spins: RecentSpin[]
+  top_winners: TopWinner[]
+}
+
+// ── Financials ───────────────────────────────────────────────────────────────
+
+export interface FinancialsKPIs {
+  total_deposits: string
+  total_deposits_change_pct: string
+  total_withdrawals: string
+  total_withdrawals_change_pct: string
+  pending_withdrawals: string
+}
+
+export interface SpinsBreakdown {
   total_staked: string
-  risk_level: 'low' | 'medium' | 'high'
-  created_at: string
+  total_won: string
+  house_fees: string
+  spin_count_total: number
+  spin_count_wins: number
+  spin_count_losses: number
 }
 
-// KYC
-export type KYCStatus = 'unverified' | 'pending' | 'approved' | 'rejected'
+export interface CashFlowPoint {
+  month: string
+  year: number
+  value: string
+}
 
-export interface KYCRecord {
-  id: string
-  user: {
-    id: string
-    telegram_id: string
-    first_name: string
-    last_name: string
-    username: string
+export interface AdminFinancials {
+  kpis: FinancialsKPIs
+  spins_breakdown: SpinsBreakdown
+  cash_flow: {
+    deposits: CashFlowPoint[]
+    withdrawals: CashFlowPoint[]
   }
-  status: KYCStatus
-  bank_name: string
-  account_number: string
-  account_name: string
-  submitted_at: string
-  reviewed_at: string | null
-  rejection_reason: string | null
 }
 
-// Withdrawals
-export type WithdrawalStatus = 'pending' | 'processing' | 'completed' | 'failed'
+// ── RTP ──────────────────────────────────────────────────────────────────────
 
-export interface WithdrawalRecord {
-  id: string
-  user: {
-    id: string
-    first_name: string
-    last_name: string
-    username: string
-  }
-  amount: string
-  status: WithdrawalStatus
-  bank_name: string
-  account_number: string
-  account_name: string
-  provider_reference: string | null
-  created_at: string
-}
-
-// RTP
-export interface RTPOutcome {
-  id: string
+export interface RTPSegment {
+  position: number
   label: string
   multiplier: string
-  probability: string
+  probability_weight: number
+  probability_pct: number
   color: string
-  showCoin?: boolean
+  is_active: boolean
 }
 
-export interface RTPTier {
-  id: string
-  min_stake: string
-  max_stake: string
-  rtp_target: string
-  outcomes: RTPOutcome[]
-}
-
-export interface RTPTierPayload {
-  min_stake: number
-  max_stake: number
-  rtp_target: number
-  outcomes: Omit<RTPOutcome, 'id'>[]
-}
-
-// Extended RTP tier (matches Create Stake modal)
-export interface RTPTierFull {
+export interface RTPWheel {
   id: string
   name: string
   wheel_type: string
   min_stake: string
   max_stake: string
+  rtp_target: string
+  computed_rtp: string
   house_edge: string
+  is_active: boolean
+  total_spins: number
+  segments: RTPSegment[]
+}
+
+export interface CreateRTPSegment {
+  label: string
+  multiplier: string
+  probability_weight: number
+  color: string
+}
+
+export interface CreateRTPPayload {
+  name: string
+  wheel_type: string
+  currency_type: string
+  min_stake: string
+  max_stake: string
   rtp_target: string
   is_active: boolean
-  created_by: string
-  outcomes: RTPOutcome[]
+  segments: CreateRTPSegment[]
 }
 
-export interface CreateStakePayload {
-  name: string
-  description: string
-  min_stake: number
-  max_stake: number
-  house_edge: number
-  rtp_target: number
-  is_active: boolean
-  outcomes: { multiplier: string; probability: number }[]
+export interface UpdateRTPPayload {
+  is_active?: boolean
+  segments?: { position: number; probability_weight: number }[]
 }
 
-// Analytics
-export interface AdminAnalyticsSummary {
+// ── Users ────────────────────────────────────────────────────────────────────
+
+export interface UsersOverview {
   total_users: number
-  total_spins_today: number
-  gross_revenue_today: string
-  net_profit_today: string
-  current_rtp: string
-  pending_withdrawals_count: number
-  pending_withdrawals_amount: string
-  pending_kyc_count: number
   flagged_accounts: number
-  active_users: number
-  new_users_today: number
-  total_revenue: string
-  net_profit: string
+  pending_kyc: number
 }
 
-// AnalyticsSummary is the same as AdminAnalyticsSummary for full compatibility
-export type AnalyticsSummary = AdminAnalyticsSummary
-
-export interface MonthlyDataPoint {
-  month: string
-  revenue: number
-  profit: number
-  spins: number
-}
-
-export interface CashFlowDataPoint {
-  month: string
-  deposits: number
-  withdrawals: number
-}
-
-export interface RevenueDataPoint {
-  date: string
-  revenue: number
-  spins: number
-}
-
-export interface RecentSpin {
+export interface AdminUser {
   id: string
-  user_name: string
-  stake: string
-  multiplier: string
-  result_label: string
-  win_value: string
-  outcome: 'win' | 'loss' | 'push' | 'partial_loss'
-  created_at: string
+  telegram_id: number
+  name: string
+  phone_number: string
+  registered_on: string
+  registered_via: string
+  balance: string
+  staked: string
+  kyc_status: string   // "Done" | "Pending" | "Rejected"
+  risk: string         // "Low" | "Medium" | "High"
+  is_active: boolean
 }
 
-export interface UserTransaction {
+export interface AdminUserKYC {
+  overall_status: string
+  display_status: string
+  personal_info_status: string
+  bank_account_status: string
+  document_status: string
+  submitted_at: string
+}
+
+export interface AdminUserBankAccount {
+  bank_name: string
+  account_name: string
+  account_number_masked: string
+  verified_at: string
+}
+
+export interface AdminUserDetail {
   id: string
-  type: 'deposit' | 'withdrawal' | 'spin_stake' | 'spin_payout' | 'reward'
-  description: string
-  amount: string
-  created_at: string
+  telegram_id: number
+  name: string
+  registered_on: string
+  registered_via: string
+  last_login: string
+  cash_balance: string
+  coin_balance: string
+  total_balance: string
+  staked: string
+  kyc: AdminUserKYC
+  risk: string
+  bank_account: AdminUserBankAccount | null
+  is_active: boolean
+  is_staff: boolean
 }
 
 export interface UserSpinRecord {
   id: string
-  stake_amount: string
-  segment_label: string
+  wheel: string
+  stake: string
+  result_label: string
   multiplier: string
-  payout_amount: string
-  outcome: 'win' | 'loss' | 'push' | 'partial_loss'
-  created_at: string
+  outcome: 'win' | 'loss'
+  win_value: string
+  is_welcome_spin: boolean
+  date: string
 }
 
-// Audit log
+export interface UserTransaction {
+  id: string
+  type: string
+  label: string
+  amount: string
+  is_credit: boolean
+  balance_type: string
+  balance_before: string
+  balance_after: string
+  status: string
+  date: string
+}
+
+// ── Withdrawals ──────────────────────────────────────────────────────────────
+
+export type WithdrawalStatus =
+  | 'pending_review'
+  | 'pending'
+  | 'processing'
+  | 'completed'
+  | 'failed'
+  | 'rejected'
+  | 'cancelled'
+
+export interface WithdrawalsOverview {
+  total_pending: string
+  total_paid: string
+  queued: number
+}
+
+export interface AdminWithdrawal {
+  id: string
+  name: string
+  user_id: string
+  amount: string
+  net_amount: string
+  bank: string
+  account_masked: string
+  type: string
+  risk: string
+  status: WithdrawalStatus
+  status_display: string
+  requires_review: boolean
+  forced_manual_review: boolean
+  reference: string
+  requested_at: string
+  completed_at: string | null
+  failure_reason: string
+}
+
+// ── KYC Queue ────────────────────────────────────────────────────────────────
+
+export type KYCSectionStatus = 'pending' | 'verified' | 'requires_correction' | 'rejected'
+
+export interface KYCSectionInfo {
+  status: KYCSectionStatus
+  reason: string
+  bank_name?: string
+  account_name?: string
+  account_masked?: string
+  filename?: string
+  document_type?: string
+  file_url?: string
+}
+
+export interface AdminKYCQueueItem {
+  id: string
+  user_id: string
+  telegram_id: number
+  name: string
+  overall_status: string
+  can_withdraw: boolean
+  sections: {
+    personal_info: KYCSectionInfo
+    bank_account: KYCSectionInfo
+    document: KYCSectionInfo
+  }
+  submitted_at: string
+  last_resubmission_at: string | null
+}
+
+export interface KYCQueueOverview {
+  total_pending: number
+  total_approved: number
+  total_rejected: number
+}
+
+// ── Fraud ────────────────────────────────────────────────────────────────────
+
+export interface FraudFlaggedUser {
+  user_id: string
+  name: string
+  telegram_id: number
+  flag: string
+  risk: string
+  flag_type: string
+}
+
+export interface FraudData {
+  total_flagged: number
+  flagged_users: FraudFlaggedUser[]
+}
+
+// ── Audit Log ────────────────────────────────────────────────────────────────
+
 export interface AuditLogEntry {
   id: string
-  admin_user: string
+  type: string
   action: string
-  target_model: string
-  target_id: string
-  details: Record<string, unknown>
-  created_at: string
+  detail: string
+  target_user: string
+  target_user_id?: string
+  performed_by: string
+  notes?: string
+  timestamp: string
+  timestamp_display: string
 }
 
-// Paginated response
+// ── Paginated responses ──────────────────────────────────────────────────────
+
 export interface PaginatedResponse<T> {
   count: number
   next: string | null
   previous: string | null
   results: T[]
 }
+
+export interface UsersListResponse extends PaginatedResponse<AdminUser> {
+  overview: UsersOverview
+}
+
+export interface WithdrawalsListResponse extends PaginatedResponse<AdminWithdrawal> {
+  overview: WithdrawalsOverview
+}
+
+export interface KYCQueueListResponse extends PaginatedResponse<AdminKYCQueueItem> {
+  overview: KYCQueueOverview
+}
+
+// Legacy aliases so mock data compiles without a full rewrite
+/** @deprecated Use AdminWithdrawal */
+export type WithdrawalRecord = AdminWithdrawal
+/** @deprecated Use AdminKYCQueueItem */
+export type KYCRecord = AdminKYCQueueItem
+/** @deprecated Use RTPWheel */
+export type RTPTierFull = RTPWheel & { outcomes?: RTPSegment[]; created_by?: string }

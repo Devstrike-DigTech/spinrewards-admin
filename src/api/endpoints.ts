@@ -1,96 +1,180 @@
 import { publicClient, apiClient } from './client'
 import type {
-  AdminTokens,
-  AdminUser,
-  KYCRecord,
-  WithdrawalRecord,
-  RTPTier,
-  RTPTierPayload,
-  AnalyticsSummary,
-  RevenueDataPoint,
+  AdminLoginResponse,
+  AdminAccount,
+  AdminDashboard,
+  AdminFinancials,
+  RTPWheel,
+  CreateRTPPayload,
+  UpdateRTPPayload,
+  AdminUserDetail,
+  UserSpinRecord,
+  UserTransaction,
+  FraudData,
   AuditLogEntry,
   PaginatedResponse,
+  UsersListResponse,
+  WithdrawalsListResponse,
+  KYCQueueListResponse,
 } from '@/types'
 
-// Auth
+// Unwrap the {success, data} envelope all admin endpoints return
+function unwrap<T>(r: { data: { data?: T } & T }): T {
+  return (r.data as any)?.data ?? r.data
+}
+
+// ── Auth ─────────────────────────────────────────────────────────────────────
+
 export const auth = {
-  login: (username: string, password: string): Promise<AdminTokens> =>
+  login: (email: string, password: string): Promise<AdminLoginResponse> =>
     publicClient
-      .post<AdminTokens>('/admin/auth/login/', { username, password })
-      .then((r) => r.data),
+      .post('/api/v1/admin/auth/login/', { email, password })
+      .then((r) => unwrap<AdminLoginResponse>(r)),
+
+  me: (): Promise<AdminAccount> =>
+    apiClient
+      .get('/api/v1/admin/auth/me/')
+      .then(unwrap<AdminAccount>),
+
+  logout: (refresh_token: string): Promise<void> =>
+    apiClient
+      .post('/api/v1/admin/auth/logout/', { refresh_token })
+      .then(() => undefined),
+
+  changePassword: (current_password: string, new_password: string): Promise<void> =>
+    apiClient
+      .post('/api/v1/admin/auth/change-password/', { current_password, new_password })
+      .then(() => undefined),
 }
 
-// Users
+// ── Dashboard ─────────────────────────────────────────────────────────────────
+
+export const dashboard = {
+  get: (): Promise<AdminDashboard> =>
+    apiClient.get('/api/v1/admin/dashboard/').then(unwrap<AdminDashboard>),
+}
+
+// ── Financials ────────────────────────────────────────────────────────────────
+
+export const financials = {
+  get: (): Promise<AdminFinancials> =>
+    apiClient.get('/api/v1/admin/financials/').then(unwrap<AdminFinancials>),
+}
+
+// ── RTP ───────────────────────────────────────────────────────────────────────
+
+export const rtp = {
+  list: (): Promise<RTPWheel[]> =>
+    apiClient.get('/api/v1/admin/rtp/').then((r) => {
+      const d = unwrap<{ count: number; wheels: RTPWheel[] }>(r)
+      return d.wheels ?? d
+    }),
+
+  create: (payload: CreateRTPPayload): Promise<{ id: string; name: string }> =>
+    apiClient.post('/api/v1/admin/rtp/', payload).then(unwrap),
+
+  update: (id: string, payload: UpdateRTPPayload): Promise<void> =>
+    apiClient.put(`/api/v1/admin/rtp/${id}/`, payload).then(() => undefined),
+}
+
+// ── Users ─────────────────────────────────────────────────────────────────────
+
 export const users = {
-  list: (params?: { search?: string; page?: number }): Promise<PaginatedResponse<AdminUser>> =>
-    apiClient.get('/admin/users/', { params }).then((r) => r.data),
-
-  detail: (id: string): Promise<AdminUser> =>
-    apiClient.get(`/admin/users/${id}/`).then((r) => r.data),
-
-  ban: (id: string): Promise<void> =>
-    apiClient.post(`/admin/users/${id}/ban/`).then(() => undefined),
-
-  unban: (id: string): Promise<void> =>
-    apiClient.post(`/admin/users/${id}/unban/`).then(() => undefined),
-}
-
-// KYC
-export const kyc = {
   list: (params?: {
-    status?: string
+    search?: string
+    filter?: string
     page?: number
-  }): Promise<PaginatedResponse<KYCRecord>> =>
-    apiClient.get('/admin/kyc/', { params }).then((r) => r.data),
+  }): Promise<UsersListResponse> =>
+    apiClient.get('/api/v1/admin/users/', { params }).then(unwrap<UsersListResponse>),
 
-  approve: (id: string): Promise<void> =>
-    apiClient.post(`/admin/kyc/${id}/approve/`).then(() => undefined),
+  detail: (id: string): Promise<AdminUserDetail> =>
+    apiClient.get(`/api/v1/admin/users/${id}/`).then(unwrap<AdminUserDetail>),
 
-  reject: (id: string, reason: string): Promise<void> =>
-    apiClient.post(`/admin/kyc/${id}/reject/`, { reason }).then(() => undefined),
+  spins: (
+    id: string,
+    page = 1,
+  ): Promise<PaginatedResponse<UserSpinRecord>> =>
+    apiClient
+      .get(`/api/v1/admin/users/${id}/spins/`, { params: { page } })
+      .then(unwrap<PaginatedResponse<UserSpinRecord>>),
+
+  transactions: (
+    id: string,
+    page = 1,
+  ): Promise<PaginatedResponse<UserTransaction>> =>
+    apiClient
+      .get(`/api/v1/admin/users/${id}/transactions/`, { params: { page } })
+      .then(unwrap<PaginatedResponse<UserTransaction>>),
 }
 
-// Withdrawals
+// ── Withdrawals ───────────────────────────────────────────────────────────────
+
 export const withdrawals = {
   list: (params?: {
+    search?: string
     status?: string
     page?: number
-  }): Promise<PaginatedResponse<WithdrawalRecord>> =>
-    apiClient.get('/admin/withdrawals/', { params }).then((r) => r.data),
+  }): Promise<WithdrawalsListResponse> =>
+    apiClient
+      .get('/api/v1/admin/withdrawals/', { params })
+      .then(unwrap<WithdrawalsListResponse>),
 
-  approve: (id: string): Promise<void> =>
-    apiClient.post(`/admin/withdrawals/${id}/approve/`).then(() => undefined),
+  approve: (id: string, notes?: string): Promise<void> =>
+    apiClient
+      .post(`/api/v1/admin/withdrawals/${id}/approve/`, { notes })
+      .then(() => undefined),
 
   reject: (id: string, reason: string): Promise<void> =>
-    apiClient.post(`/admin/withdrawals/${id}/reject/`, { reason }).then(() => undefined),
+    apiClient
+      .post(`/api/v1/admin/withdrawals/${id}/reject/`, { reason })
+      .then(() => undefined),
 }
 
-// RTP
-export const rtp = {
-  list: (): Promise<RTPTier[]> =>
-    apiClient.get('/admin/rtp/tiers/').then((r) => r.data),
+// ── KYC Queue ─────────────────────────────────────────────────────────────────
 
-  create: (payload: RTPTierPayload): Promise<RTPTier> =>
-    apiClient.post('/admin/rtp/tiers/', payload).then((r) => r.data),
+export const kycQueue = {
+  list: (params?: {
+    search?: string
+    status?: string
+    page?: number
+  }): Promise<KYCQueueListResponse> =>
+    apiClient
+      .get('/api/v1/admin/kyc/queue/', { params })
+      .then(unwrap<KYCQueueListResponse>),
 
-  update: (id: string, payload: RTPTierPayload): Promise<RTPTier> =>
-    apiClient.put(`/admin/rtp/tiers/${id}/`, payload).then((r) => r.data),
+  approve: (
+    id: string,
+    section: 'all' | 'personal_info' | 'bank_account' | 'document',
+  ): Promise<{ overall_status: string; can_withdraw: boolean }> =>
+    apiClient
+      .post(`/api/v1/admin/kyc/${id}/approve/`, { section })
+      .then(unwrap),
 
-  remove: (id: string): Promise<void> =>
-    apiClient.delete(`/admin/rtp/tiers/${id}/`).then(() => undefined),
+  reject: (
+    id: string,
+    section: 'personal_info' | 'bank_account' | 'document',
+    reason: string,
+  ): Promise<{ overall_status: string; can_withdraw: boolean }> =>
+    apiClient
+      .post(`/api/v1/admin/kyc/${id}/reject/`, { section, reason })
+      .then(unwrap),
 }
 
-// Analytics
-export const analytics = {
-  summary: (): Promise<AnalyticsSummary> =>
-    apiClient.get('/admin/analytics/summary/').then((r) => r.data),
+// ── Fraud ─────────────────────────────────────────────────────────────────────
 
-  revenue: (days = 30): Promise<RevenueDataPoint[]> =>
-    apiClient.get('/admin/analytics/revenue/', { params: { days } }).then((r) => r.data),
+export const fraud = {
+  get: (): Promise<FraudData> =>
+    apiClient.get('/api/v1/admin/fraud/').then(unwrap<FraudData>),
 }
 
-// Audit log
+// ── Audit Log ─────────────────────────────────────────────────────────────────
+
 export const auditLog = {
-  list: (params?: { page?: number }): Promise<PaginatedResponse<AuditLogEntry>> =>
-    apiClient.get('/admin/audit-log/', { params }).then((r) => r.data),
+  list: (params?: {
+    type?: string
+    page?: number
+  }): Promise<PaginatedResponse<AuditLogEntry>> =>
+    apiClient
+      .get('/api/v1/admin/audit-logs/', { params })
+      .then(unwrap<PaginatedResponse<AuditLogEntry>>),
 }
