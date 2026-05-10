@@ -20,6 +20,12 @@ export const MOCK_DASHBOARD: AdminDashboard = {
     total_revenue_change_pct: '2.0',
     net_profit: '1300000.00',
     current_rtp: '70.0%',
+    // (500,000 staked - 350,000 won) / 500,000 * 100 = 30%
+    house_edge_pct: '30.0',
+    house_edge_change_pct: '1.5',
+    // 450 wins / 2,050 total spins * 100 = 21.95%
+    player_win_rate_pct: '21.95',
+    player_win_rate_change_pct: '0.8',
     active_users: 4599,
     active_users_change_pct: '52.0',
     new_users_today: 52,
@@ -39,17 +45,16 @@ export const MOCK_DASHBOARD: AdminDashboard = {
     { month: 'Dec', year: 2026, value: '620000.00' },
   ],
   recent_spins: [
-    { id: 'sp1', user: 'Chidi Okonkwo', stake: '500.00', result: '2x', multiplier: '2.0000', win_value: '1000.00', outcome: 'win', date: 'May 4, 2026' },
-    { id: 'sp2', user: 'Ngozi Adeyemi', stake: '200.00', result: 'Loss', multiplier: '0.0000', win_value: '0.00', outcome: 'loss', date: 'May 4, 2026' },
-    { id: 'sp3', user: 'Emeka Eze', stake: '1000.00', result: '5x', multiplier: '5.0000', win_value: '5000.00', outcome: 'win', date: 'May 4, 2026' },
-    { id: 'sp4', user: 'Sola Adesanya', stake: '500.00', result: 'Loss', multiplier: '0.0000', win_value: '0.00', outcome: 'loss', date: 'May 4, 2026' },
-    { id: 'sp5', user: 'Kemi Okafor', stake: '1000.00', result: '2x', multiplier: '2.0000', win_value: '2000.00', outcome: 'win', date: 'May 4, 2026' },
-    { id: 'sp6', user: 'Dayo Adeleke', stake: '300.00', result: 'Loss', multiplier: '0.0000', win_value: '0.00', outcome: 'loss', date: 'May 4, 2026' },
+    { id: 'sp1', user: 'Alex Ninth', stake: '500.00', result: '2x', multiplier: '2.0000', win_value: '1000.00', outcome: 'win', date: 'May 4, 2026' },
+    { id: 'sp2', user: 'Mariam Akpo', stake: '500.00', result: 'Loss', multiplier: '0.0000', win_value: '0.00', outcome: 'loss', date: 'May 4, 2026' },
+    { id: 'sp3', user: 'Chinedu Jacks', stake: '10000.00', result: '5x', multiplier: '5.0000', win_value: '50000.00', outcome: 'win', date: 'May 4, 2026' },
+    { id: 'sp4', user: 'Chinedu Jacks', stake: '10000.00', result: '5x', multiplier: '5.0000', win_value: '50000.00', outcome: 'win', date: 'May 4, 2026' },
   ],
   top_winners: [
-    { user: 'Emeka Eze', win_value: '50000.00' },
-    { user: 'Kayode Salami', win_value: '35000.00' },
-    { user: 'Kemi Okafor', win_value: '20000.00' },
+    { user: 'Chinedu Jacks', win_value: '50000.00' },
+    { user: 'Alex Ninth', win_value: '1000.00' },
+    { user: 'Alex Ninth', win_value: '1000.00' },
+    { user: 'Alex Ninth', win_value: '1000.00' },
   ],
 }
 
@@ -57,11 +62,23 @@ export const MOCK_DASHBOARD: AdminDashboard = {
 
 export const MOCK_FINANCIALS: AdminFinancials = {
   kpis: {
+    // Deposits
     total_deposits: '2400500.00',
     total_deposits_change_pct: '2.0',
+    total_deposit_count: 1240,
+    avg_deposit: '1936.00',              // 2,400,500 / 1,240
+    net_cash_position: '1100500.00',     // 2,400,500 − 1,300,000
+    // Withdrawals
     total_withdrawals: '1300000.00',
     total_withdrawals_change_pct: '2.0',
     pending_withdrawals: '350000.00',
+    withdrawal_pending_count: 12,
+    withdrawal_count: 87,
+    withdrawal_success_rate: '86.2',     // 75/87 * 100
+    // GGR
+    ggr: '150000.00',                    // 500,000 staked − 350,000 won
+    ggr_margin_pct: '30.0',              // 150,000 / 500,000 * 100
+    withdrawal_rate_pct: '54.2',         // 1,300,000 / 2,400,500 * 100
   },
   spins_breakdown: {
     total_staked: '500000.00',
@@ -70,6 +87,8 @@ export const MOCK_FINANCIALS: AdminFinancials = {
     spin_count_total: 2050,
     spin_count_wins: 450,
     spin_count_losses: 800,
+    avg_stake: '243.90',                 // 500,000 / 2,050
+    win_rate_pct: '21.95',               // 450 / 2,050 * 100
   },
   cash_flow: {
     deposits: [
@@ -79,6 +98,12 @@ export const MOCK_FINANCIALS: AdminFinancials = {
       { month: 'Apr', year: 2026, value: '1700000.00' },
       { month: 'May', year: 2026, value: '2300000.00' },
       { month: 'Jun', year: 2026, value: '2600000.00' },
+      { month: 'Jul', year: 2026, value: '2400000.00' },
+      { month: 'Aug', year: 2026, value: '2200000.00' },
+      { month: 'Sep', year: 2026, value: '2500000.00' },
+      { month: 'Oct', year: 2026, value: '2800000.00' },
+      { month: 'Nov', year: 2026, value: '2600000.00' },
+      { month: 'Dec', year: 2026, value: '3100000.00' },
     ],
     withdrawals: [
       { month: 'Jan', year: 2026, value: '600000.00' },
@@ -87,8 +112,28 @@ export const MOCK_FINANCIALS: AdminFinancials = {
       { month: 'Apr', year: 2026, value: '600000.00' },
       { month: 'May', year: 2026, value: '650000.00' },
       { month: 'Jun', year: 2026, value: '800000.00' },
+      { month: 'Jul', year: 2026, value: '750000.00' },
+      { month: 'Aug', year: 2026, value: '700000.00' },
+      { month: 'Sep', year: 2026, value: '780000.00' },
+      { month: 'Oct', year: 2026, value: '900000.00' },
+      { month: 'Nov', year: 2026, value: '830000.00' },
+      { month: 'Dec', year: 2026, value: '970000.00' },
     ],
   },
+  ggr_trend: [
+    { month: 'Jan', year: 2026, value: '112500.00' },
+    { month: 'Feb', year: 2026, value: '93750.00' },
+    { month: 'Mar', year: 2026, value: '131250.00' },
+    { month: 'Apr', year: 2026, value: '106250.00' },
+    { month: 'May', year: 2026, value: '143750.00' },
+    { month: 'Jun', year: 2026, value: '162500.00' },
+    { month: 'Jul', year: 2026, value: '150000.00' },
+    { month: 'Aug', year: 2026, value: '137500.00' },
+    { month: 'Sep', year: 2026, value: '156250.00' },
+    { month: 'Oct', year: 2026, value: '175000.00' },
+    { month: 'Nov', year: 2026, value: '162500.00' },
+    { month: 'Dec', year: 2026, value: '193750.00' },
+  ],
 }
 
 // ── RTP Wheels ────────────────────────────────────────────────────────────────
