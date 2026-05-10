@@ -117,21 +117,41 @@ export const mockUsers = {
     return delay(MOCK_USER_DETAIL)
   },
 
-  spins: (_id: string, page = 1): Promise<PaginatedResponse<typeof MOCK_USER_SPINS[0]>> =>
-    delay({
-      count: MOCK_USER_SPINS.length,
+  spins: (
+    _id: string,
+    page = 1,
+    outcome?: 'win' | 'loss',
+  ): Promise<PaginatedResponse<typeof MOCK_USER_SPINS[0]>> => {
+    const filtered = outcome
+      ? MOCK_USER_SPINS.filter((s) => s.outcome === outcome)
+      : MOCK_USER_SPINS
+    return delay({
+      count: filtered.length,
       next: null,
       previous: page > 1 ? `?page=${page - 1}` : null,
-      results: MOCK_USER_SPINS,
-    }),
+      results: filtered,
+    })
+  },
 
-  transactions: (_id: string, page = 1): Promise<PaginatedResponse<typeof MOCK_USER_TRANSACTIONS[0]>> =>
-    delay({
-      count: MOCK_USER_TRANSACTIONS.length,
+  transactions: (
+    _id: string,
+    page = 1,
+    type?: string,
+  ): Promise<PaginatedResponse<typeof MOCK_USER_TRANSACTIONS[0]>> => {
+    const filtered = type
+      ? MOCK_USER_TRANSACTIONS.filter((t) => t.type === type)
+      : MOCK_USER_TRANSACTIONS
+    return delay({
+      count: filtered.length,
       next: null,
       previous: page > 1 ? `?page=${page - 1}` : null,
-      results: MOCK_USER_TRANSACTIONS,
-    }),
+      results: filtered,
+    })
+  },
+
+  flag: (_id: string): Promise<void> => delay(undefined),
+
+  ban: (_id: string): Promise<void> => delay(undefined),
 }
 
 // ── KYC Queue ─────────────────────────────────────────────────────────────────

@@ -169,6 +169,7 @@ export interface UsersOverview {
   total_users: number
   flagged_accounts: number
   pending_kyc: number
+  banned_accounts?: number
 }
 
 export interface AdminUser {

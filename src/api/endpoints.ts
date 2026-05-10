@@ -93,18 +93,30 @@ export const users = {
   spins: (
     id: string,
     page = 1,
+    outcome?: 'win' | 'loss',
   ): Promise<PaginatedResponse<UserSpinRecord>> =>
     apiClient
-      .get(`/api/v1/admin/users/${id}/spins/`, { params: { page } })
+      .get(`/api/v1/admin/users/${id}/spins/`, {
+        params: { page, ...(outcome ? { outcome } : {}) },
+      })
       .then(unwrap<PaginatedResponse<UserSpinRecord>>),
 
   transactions: (
     id: string,
     page = 1,
+    type?: string,
   ): Promise<PaginatedResponse<UserTransaction>> =>
     apiClient
-      .get(`/api/v1/admin/users/${id}/transactions/`, { params: { page } })
+      .get(`/api/v1/admin/users/${id}/transactions/`, {
+        params: { page, ...(type ? { type } : {}) },
+      })
       .then(unwrap<PaginatedResponse<UserTransaction>>),
+
+  flag: (id: string): Promise<void> =>
+    apiClient.post(`/api/v1/admin/users/${id}/flag/`).then(() => undefined),
+
+  ban: (id: string): Promise<void> =>
+    apiClient.post(`/api/v1/admin/users/${id}/ban/`).then(() => undefined),
 }
 
 // ── Withdrawals ───────────────────────────────────────────────────────────────
