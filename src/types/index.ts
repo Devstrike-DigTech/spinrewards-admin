@@ -26,6 +26,10 @@ export interface DashboardKPIs {
   total_revenue_change_pct: string
   net_profit: string
   current_rtp: string
+  house_edge_pct: string          // (total_staked - total_won) / total_staked * 100
+  house_edge_change_pct: string
+  player_win_rate_pct: string     // winning_spins / total_spins * 100
+  player_win_rate_change_pct: string
   active_users: number
   active_users_change_pct: string
   new_users_today: number
@@ -63,20 +67,35 @@ export interface AdminDashboard {
 // ── Financials ───────────────────────────────────────────────────────────────
 
 export interface FinancialsKPIs {
+  // Core fields — returned by real API
   total_deposits: string
   total_deposits_change_pct: string
   total_withdrawals: string
   total_withdrawals_change_pct: string
   pending_withdrawals: string
+  // Extended fields — returned by real API when ready, optional until then
+  total_deposit_count?: number         // number of deposit transactions
+  avg_deposit?: string                 // total_deposits / total_deposit_count
+  net_cash_position?: string           // total_deposits − total_withdrawals
+  withdrawal_pending_count?: number    // number of queued/pending withdrawal requests
+  withdrawal_count?: number            // total withdrawal transactions processed
+  withdrawal_success_rate?: string     // approved / total * 100
+  ggr?: string                         // gross gaming revenue = total_staked − total_won
+  ggr_margin_pct?: string              // ggr / total_staked * 100
+  withdrawal_rate_pct?: string         // total_withdrawals / total_deposits * 100
 }
 
 export interface SpinsBreakdown {
+  // Core fields — returned by real API
   total_staked: string
   total_won: string
   house_fees: string
   spin_count_total: number
   spin_count_wins: number
   spin_count_losses: number
+  // Extended fields — optional until backend adds them
+  avg_stake?: string                   // total_staked / spin_count_total
+  win_rate_pct?: string                // spin_count_wins / spin_count_total * 100
 }
 
 export interface CashFlowPoint {
@@ -92,6 +111,7 @@ export interface AdminFinancials {
     deposits: CashFlowPoint[]
     withdrawals: CashFlowPoint[]
   }
+  ggr_trend?: CashFlowPoint[]          // optional until backend adds it
 }
 
 // ── RTP ──────────────────────────────────────────────────────────────────────
