@@ -13,6 +13,8 @@ import { RTPPage } from '@/pages/RTPPage'
 import { FraudRiskPage } from '@/pages/FraudRiskPage'
 import { AdminPage } from '@/pages/AdminPage'
 import { AuditLogPage } from '@/pages/AuditLogPage'
+import { ChallengesPage } from '@/pages/ChallengesPage'
+import { ReferralsPage } from '@/pages/ReferralsPage'
 
 export function App() {
   return (
@@ -31,6 +33,8 @@ export function App() {
             <Route path="/fraud-risk" element={<FraudRiskPage />} />
             <Route path="/admin" element={<AdminPage />} />
             <Route path="/audit-log" element={<AuditLogPage />} />
+            <Route path="/challenges" element={<ChallengesPage />} />
+            <Route path="/referrals" element={<ReferralsPage />} />
           </Route>
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />

@@ -10,6 +10,12 @@ import {
   MOCK_FRAUD,
   MOCK_RTP_TIERS,
   MOCK_AUDIT_LOG,
+  MOCK_CHALLENGES,
+  MOCK_CHALLENGE_PARTICIPANTS,
+  MOCK_CHALLENGE_COMPLETIONS,
+  MOCK_REFERRALS,
+  MOCK_USER_CHALLENGES,
+  MOCK_USER_REFERRALS,
 } from './data'
 import type {
   AdminUserDetail,
@@ -19,6 +25,11 @@ import type {
   UsersListResponse,
   WithdrawalsListResponse,
   KYCQueueListResponse,
+  AdminChallenge,
+  CreateChallengePayload,
+  ChallengesListResponse,
+  ReferralsListResponse,
+  UserRewardsData,
 } from '@/types'
 
 function delay<T>(data: T): Promise<T> {
@@ -66,13 +77,13 @@ export const mockAuth = {
 // ── Dashboard ─────────────────────────────────────────────────────────────────
 
 export const mockDashboard = {
-  get: () => delay(MOCK_DASHBOARD),
+  get: (_params?: { year?: string; month?: string }) => delay(MOCK_DASHBOARD),
 }
 
 // ── Financials ────────────────────────────────────────────────────────────────
 
 export const mockFinancials = {
-  get: () => delay(MOCK_FINANCIALS),
+  get: (_params?: { year?: string; month?: string }) => delay(MOCK_FINANCIALS),
 }
 
 // ── RTP ───────────────────────────────────────────────────────────────────────
@@ -188,8 +199,14 @@ export const mockWithdrawals = {
     status = '',
     page = 1,
   }: { search?: string; status?: string; page?: number } = {}): Promise<WithdrawalsListResponse> => {
+    // 'rejected' tab includes rejected, failed, and cancelled
+    // 'pending' tab includes pending and processing
     const filtered = status
-      ? MOCK_WITHDRAWALS.filter((w) => w.status === status)
+      ? status === 'rejected'
+        ? MOCK_WITHDRAWALS.filter((w) => w.status === 'rejected' || w.status === 'failed' || w.status === 'cancelled')
+        : status === 'pending'
+          ? MOCK_WITHDRAWALS.filter((w) => w.status === 'pending' || w.status === 'processing')
+          : MOCK_WITHDRAWALS.filter((w) => w.status === status)
       : MOCK_WITHDRAWALS
     const start = (page - 1) * PAGE_SIZE
     return delay({
@@ -203,6 +220,133 @@ export const mockWithdrawals = {
 
   approve: (_id: string, _notes?: string): Promise<void> => delay(undefined as void),
   reject: (_id: string, _reason: string): Promise<void> => delay(undefined as void),
+}
+
+// ── Challenges ────────────────────────────────────────────────────────────────
+
+let mockChallengesStore = [...MOCK_CHALLENGES]
+
+export const mockChallenges = {
+  list: ({
+    type = '',
+    is_active,
+    page = 1,
+  }: { type?: string; is_active?: boolean; page?: number } = {}): Promise<ChallengesListResponse> => {
+    let filtered = mockChallengesStore
+    if (type) filtered = filtered.filter((c) => c.type === type)
+    if (is_active !== undefined) filtered = filtered.filter((c) => c.is_active === is_active)
+    const start = (page - 1) * PAGE_SIZE
+    return delay({
+      count: filtered.length,
+      next: filtered.length > page * PAGE_SIZE ? `?page=${page + 1}` : null,
+      previous: page > 1 ? `?page=${page - 1}` : null,
+      results: filtered.slice(start, start + PAGE_SIZE),
+    })
+  },
+
+  create: (payload: CreateChallengePayload): Promise<AdminChallenge> => {
+    const newChallenge: AdminChallenge = {
+      id: `ch-${Date.now()}`,
+      name: payload.name,
+      description: payload.description ?? '',
+      type: payload.type,
+      recurrence: payload.recurrence,
+      criteria: payload.criteria,
+      reward: payload.reward,
+      is_active: payload.is_active ?? true,
+      is_visible: payload.is_visible ?? true,
+      max_completions_per_user: payload.max_completions_per_user ?? null,
+      starts_at: payload.starts_at ?? null,
+      expires_at: payload.expires_at ?? null,
+      created_at: new Date().toISOString(),
+      participant_count: 0,
+      completion_count: 0,
+    }
+    mockChallengesStore = [newChallenge, ...mockChallengesStore]
+    return delay(newChallenge)
+  },
+
+  get: (id: string): Promise<AdminChallenge> => {
+    const ch = mockChallengesStore.find((c) => c.id === id)
+    if (!ch) return Promise.reject(new Error('Not found'))
+    return delay(ch)
+  },
+
+  update: (id: string, payload: Partial<CreateChallengePayload> & { is_active?: boolean; is_visible?: boolean }): Promise<AdminChallenge> => {
+    mockChallengesStore = mockChallengesStore.map((c) =>
+      c.id === id ? { ...c, ...payload } : c
+    )
+    return delay(mockChallengesStore.find((c) => c.id === id)!)
+  },
+
+  delete: (id: string): Promise<void> => {
+    mockChallengesStore = mockChallengesStore.map((c) =>
+      c.id === id ? { ...c, is_active: false } : c
+    )
+    return delay(undefined as void)
+  },
+
+  participants: (_id: string, _page = 1) =>
+    delay({
+      challenge: { id: _id, name: 'Challenge' },
+      count: MOCK_CHALLENGE_PARTICIPANTS.length,
+      next: null,
+      previous: null,
+      results: MOCK_CHALLENGE_PARTICIPANTS,
+    }),
+
+  completions: (_id: string, _page = 1) =>
+    delay({
+      challenge: { id: _id, name: 'Challenge' },
+      total_completions: MOCK_CHALLENGE_COMPLETIONS.length,
+      count: MOCK_CHALLENGE_COMPLETIONS.length,
+      results: MOCK_CHALLENGE_COMPLETIONS,
+    }),
+}
+
+// ── Referrals ─────────────────────────────────────────────────────────────────
+
+export const mockReferrals = {
+  list: ({
+    status = '',
+    search = '',
+    page = 1,
+  }: { status?: string; search?: string; page?: number } = {}): Promise<ReferralsListResponse> => {
+    let filtered = MOCK_REFERRALS
+    if (status) filtered = filtered.filter((r) => r.status === status)
+    if (search) {
+      const q = search.toLowerCase()
+      filtered = filtered.filter(
+        (r) =>
+          r.referrer.name.toLowerCase().includes(q) ||
+          r.referred_user.name.toLowerCase().includes(q)
+      )
+    }
+    const start = (page - 1) * PAGE_SIZE
+    const overview = {
+      total: MOCK_REFERRALS.length,
+      pending: MOCK_REFERRALS.filter((r) => r.status === 'pending').length,
+      qualified: MOCK_REFERRALS.filter((r) => r.status === 'qualified').length,
+      rewarded: MOCK_REFERRALS.filter((r) => r.status === 'rewarded').length,
+    }
+    return delay({
+      overview,
+      count: filtered.length,
+      next: filtered.length > page * PAGE_SIZE ? `?page=${page + 1}` : null,
+      previous: page > 1 ? `?page=${page - 1}` : null,
+      results: filtered.slice(start, start + PAGE_SIZE),
+    })
+  },
+}
+
+// ── User Rewards ──────────────────────────────────────────────────────────────
+
+export const mockUserRewards = {
+  get: (_userId: string): Promise<UserRewardsData> =>
+    delay({
+      challenges: MOCK_USER_CHALLENGES,
+      referrals: MOCK_USER_REFERRALS,
+    }),
 }
 
 // ── Fraud ─────────────────────────────────────────────────────────────────────
