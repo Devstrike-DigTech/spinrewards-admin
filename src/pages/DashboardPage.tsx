@@ -3,10 +3,12 @@ import { useQuery } from '@tanstack/react-query'
 import {
   BarChart,
   Bar,
+  Cell,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
+  ReferenceLine,
   ResponsiveContainer,
 } from 'recharts'
 import { CheckCircle2, AlertTriangle, Info } from 'lucide-react'
@@ -20,7 +22,7 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip'
 import { formatCurrency } from '@/lib/utils'
-import type { AdminDashboard, ProfitTrendPoint, RecentSpin } from '@/types'
+import type { AdminDashboard, DashboardGraphPoint, RecentSpin } from '@/types'
 
 // ── helpers ───────────────────────────────────────────────────────────────────
 
@@ -106,18 +108,20 @@ const MONTH_INDEX: Record<string, number> = {
   Jul: 6, Aug: 7, Sep: 8, Oct: 9, Nov: 10, Dec: 11,
 }
 
-function buildDailyData(monthName: string, year: number, trend: ProfitTrendPoint[]) {
+function buildDailyData(monthName: string, year: number, graph: DashboardGraphPoint[]) {
   const monthIdx = MONTH_INDEX[monthName] ?? 0
-  const monthData = trend.find(p => p.month === monthName && p.year === year)
-  const monthlyProfit = monthData ? parseFloat(monthData.value) : 300000
-  const daysInMonth = new Date(year, monthIdx + 1, 0).getDate()
-  const dailyBase = monthlyProfit / daysInMonth / 1000
+  const monthData = graph.find(p => p.month === monthName && p.year === year)
+  const monthlyStaked = monthData ? parseFloat(monthData.staked) : 600000
+  const monthlyWon   = monthData ? parseFloat(monthData.won)    : 420000
+  const monthlyGgr   = monthData ? parseFloat(monthData.ggr)    : 180000
+  const daysInMonth  = new Date(year, monthIdx + 1, 0).getDate()
 
   return Array.from({ length: daysInMonth }, (_, i) => {
     const variance = 0.5 + ((Math.sin(i * 2.3 + monthIdx * 0.7) + 1) / 2) * 0.9
-    const profit = Math.round(dailyBase * variance)
-    const revenue = Math.round(profit * 1.42)
-    return { label: String(i + 1), profit, remainder: revenue - profit }
+    const staked = Math.round((monthlyStaked / daysInMonth / 1000) * variance)
+    const won    = Math.round((monthlyWon    / daysInMonth / 1000) * variance)
+    const ggr    = Math.round((monthlyGgr    / daysInMonth / 1000) * variance)
+    return { label: String(i + 1), staked, won, ggr }
   })
 }
 
@@ -142,27 +146,58 @@ export function DashboardPage() {
   const [filterMonth, setFilterMonth] = useState(MONTHS[new Date().getMonth()])
   const [filterYear, setFilterYear] = useState('2026')
 
+  // Build API params from the active filter selection
+  const apiParams = useMemo(() => {
+    const params: { year: string; month?: string } = { year: filterYear }
+    if (filterMonth !== 'Month') params.month = filterMonth
+    return params
+  }, [filterMonth, filterYear])
+
   const { data, isLoading } = useQuery<AdminDashboard>({
-    queryKey: ['dashboard'],
-    queryFn: dashboardApi.get,
+    queryKey: ['dashboard', filterMonth, filterYear],
+    queryFn: () => dashboardApi.get(apiParams),
     refetchInterval: 60_000,
   })
 
   const kpis = data?.kpis
-  const trend = data?.profit_trend ?? []
+  const graph = data?.graph ?? []
   const spins = data?.recent_spins ?? []
   const winners = data?.top_winners ?? []
 
   const chartData = useMemo(() => {
     if (filterMonth === 'Month') {
-      return trend.map((p) => {
-        const profit = Math.round(parseFloat(p.value) / 1000)
-        const revenue = Math.round(profit * 1.42)
-        return { label: p.month, profit, remainder: revenue - profit }
+      // Always render all 12 months; zero-fill months the API hasn't returned yet
+      return MONTHS.map((month) => {
+        const p = graph.find((g) => g.month === month && g.year === parseInt(filterYear))
+        return {
+          label: month,
+          staked: p ? Math.round(parseFloat(p.staked) / 1000) : 0,
+          won:    p ? Math.round(parseFloat(p.won)    / 1000) : 0,
+          ggr:    p ? Math.round(parseFloat(p.ggr)    / 1000) : 0,
+        }
       })
     }
-    return buildDailyData(filterMonth, parseInt(filterYear), trend)
-  }, [filterMonth, filterYear, trend])
+
+    // Specific month selected — use real daily data from API when available (graph entries have `day`)
+    const hasDailyData = graph.length > 0 && graph[0].day !== undefined
+    if (hasDailyData) {
+      const monthIdx = MONTH_INDEX[filterMonth] ?? 0
+      const daysInMonth = new Date(parseInt(filterYear), monthIdx + 1, 0).getDate()
+      return Array.from({ length: daysInMonth }, (_, i) => {
+        const day = i + 1
+        const p = graph.find((g) => g.day === day)
+        return {
+          label: String(day),
+          staked: p ? Math.round(parseFloat(p.staked) / 1000) : 0,
+          won:    p ? Math.round(parseFloat(p.won)    / 1000) : 0,
+          ggr:    p ? Math.round(parseFloat(p.ggr)    / 1000) : 0,
+        }
+      })
+    }
+
+    // Fallback: simulate daily data until backend adds daily support
+    return buildDailyData(filterMonth, parseInt(filterYear), graph)
+  }, [filterMonth, filterYear, graph])
 
   const selectCls =
     'h-8 rounded-md border border-[#1e2a4a] bg-[#0D1836] px-3 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-[#C9961A]'
@@ -198,28 +233,28 @@ export function DashboardPage() {
           title="Total Revenue"
           tooltip={TOOLTIPS.totalRevenue}
           value={kpis ? `₦ ${parseFloat(kpis.total_revenue).toLocaleString()}` : '—'}
-          change={kpis?.total_revenue_change_pct}
+          change={kpis?.total_revenue_change_pct !== '0' ? kpis?.total_revenue_change_pct : undefined}
           isLoading={isLoading}
         />
         <StatCard
-          title="Net Profit"
+          title="Net Profit (GGR)"
           tooltip={TOOLTIPS.netProfit}
-          value={kpis ? `₦ ${parseFloat(kpis.net_profit).toLocaleString()}` : '—'}
-          change={kpis?.total_revenue_change_pct}
+          value={kpis ? `₦ ${parseFloat(kpis.net_profit_ggr).toLocaleString()}` : '—'}
+          change={kpis?.net_profit_ggr_change_pct !== '0' ? kpis?.net_profit_ggr_change_pct : undefined}
+          sub={kpis ? `${kpis.total_spins.toLocaleString()} total spins` : undefined}
           isLoading={isLoading}
         />
         <StatCard
           title="Realized House Edge"
           tooltip={TOOLTIPS.houseEdge}
-          value={kpis ? `${kpis.house_edge_pct}%` : '—'}
-          change={kpis?.house_edge_change_pct}
+          value={kpis ? `${kpis.realized_house_edge_pct}%` : '—'}
           isLoading={isLoading}
         />
         <StatCard
           title="Player Win Rate"
           tooltip={TOOLTIPS.playerWinRate}
           value={kpis ? `${kpis.player_win_rate_pct}%` : '—'}
-          change={kpis?.player_win_rate_change_pct}
+          sub={kpis ? `${kpis.winning_spins} wins / ${kpis.total_spins} spins` : undefined}
           changeInvert   // rising win rate = players winning more = worse for house
           isLoading={isLoading}
         />
@@ -227,7 +262,6 @@ export function DashboardPage() {
           title="Active Users"
           tooltip={TOOLTIPS.activeUsers}
           value={kpis ? kpis.active_users.toLocaleString() : '—'}
-          change={kpis?.active_users_change_pct ? '52' : undefined}
           sub={kpis ? `${kpis.new_users_today} new today` : undefined}
           isLoading={isLoading}
         />
@@ -246,7 +280,8 @@ export function DashboardPage() {
               <BarChart
                 data={chartData}
                 margin={{ top: 28, right: 8, left: 0, bottom: 0 }}
-                barCategoryGap={filterMonth === 'Month' ? '30%' : '15%'}
+                barCategoryGap={filterMonth === 'Month' ? '35%' : '20%'}
+                barGap={2}
               >
                 <CartesianGrid strokeDasharray="3 3" stroke="#1e2a4a" vertical={false} />
                 <XAxis
@@ -271,14 +306,27 @@ export function DashboardPage() {
                     borderRadius: '8px',
                     fontSize: 12,
                   }}
-                  formatter={(v: number, name: string) => [
-                    formatCurrency(v * 1000),
-                    name === 'profit' ? 'Profit' : 'Revenue',
-                  ]}
+                  formatter={(v: number, name: string) => {
+                    const labels: Record<string, string> = {
+                      staked: 'Staked',
+                      won: 'Payouts',
+                      ggr: 'GGR (Profit)',
+                    }
+                    return [formatCurrency(v * 1000), labels[name] ?? name]
+                  }}
                 />
-                {/* Revenue bar: profit + remainder stacked = full revenue height */}
-                <Bar dataKey="profit" stackId="a" fill="#1e2a6a" radius={[0, 0, 3, 3]} maxBarSize={32} />
-                <Bar dataKey="remainder" stackId="a" fill="#3a4fa0" radius={[3, 3, 0, 0]} maxBarSize={32} />
+                {/* Zero reference line — makes negative GGR visually obvious */}
+                <ReferenceLine y={0} stroke="#ef4444" strokeWidth={1.5} strokeDasharray="4 3" />
+                {/* Staked — total wagered */}
+                <Bar dataKey="staked" fill="#1e3a8a" radius={[3, 3, 0, 0]} maxBarSize={24} name="staked" />
+                {/* Payouts — paid out to players */}
+                <Bar dataKey="won" fill="#C9961A" radius={[3, 3, 0, 0]} maxBarSize={24} name="won" />
+                {/* GGR — green when profit, red when loss */}
+                <Bar dataKey="ggr" maxBarSize={24} radius={[3, 3, 0, 0]} name="ggr">
+                  {chartData.map((entry, i) => (
+                    <Cell key={i} fill={entry.ggr >= 0 ? '#22c55e' : '#ef4444'} />
+                  ))}
+                </Bar>
               </BarChart>
             </ResponsiveContainer>
           )}

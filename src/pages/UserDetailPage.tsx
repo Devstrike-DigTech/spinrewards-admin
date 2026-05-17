@@ -3,8 +3,8 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { ChevronLeft, MoreVertical, X } from 'lucide-react'
 import { toast } from 'sonner'
-import { usersApi } from '@/api/index'
-import type { AdminUserDetail, UserSpinRecord, UserTransaction } from '@/types'
+import { usersApi, userRewardsApi } from '@/api/index'
+import type { AdminUserDetail, UserSpinRecord, UserTransaction, UserChallengeProgress, UserReferralEntry } from '@/types'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Pagination } from '@/components/Pagination'
@@ -15,7 +15,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 
-type TabType = 'spins' | 'transactions'
+type TabType = 'spins' | 'transactions' | 'rewards'
 
 // ── Filter pills ──────────────────────────────────────────────────────────────
 
@@ -212,6 +212,86 @@ function TxRow({ tx }: { tx: UserTransaction }) {
   )
 }
 
+// ── Challenge progress row ────────────────────────────────────────────────────
+
+const REWARD_LABELS: Record<string, string> = {
+  coins: '🪙',
+  cash: '₦',
+  free_spins: '🎡',
+  multiplier_boost: '⚡',
+}
+
+function ChallengeProgressRow({ challenge }: { challenge: UserChallengeProgress }) {
+  const pct = Math.min(challenge.progress_pct, 100)
+  const rewardSymbol = REWARD_LABELS[challenge.reward.type] ?? ''
+  const rewardText = challenge.reward.type === 'cash'
+    ? `₦${challenge.reward.amount.toLocaleString()}`
+    : challenge.reward.type === 'coins'
+      ? `${challenge.reward.amount.toLocaleString()} coins`
+      : `${challenge.reward.amount}`
+
+  return (
+    <div
+      className="rounded-xl px-4 py-3 flex items-center gap-4"
+      style={{ border: '1px solid #1e2a4a' }}
+    >
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center justify-between gap-2 mb-1.5">
+          <p className="text-sm font-medium text-white truncate">{challenge.challenge_name}</p>
+          {challenge.is_completed
+            ? <Badge variant="success" className="text-xs shrink-0">Completed</Badge>
+            : <span className="text-xs text-muted-foreground shrink-0">{pct.toFixed(0)}%</span>
+          }
+        </div>
+        <div className="h-1.5 rounded-full" style={{ background: '#1e2a4a' }}>
+          <div
+            className="h-1.5 rounded-full transition-all"
+            style={{
+              width: `${pct}%`,
+              background: challenge.is_completed ? '#22c55e' : '#C9961A',
+            }}
+          />
+        </div>
+        <p className="text-xs text-muted-foreground mt-1">
+          {challenge.current_count}/{challenge.target_count}
+          {challenge.reward_claimed && (
+            <span className="ml-2" style={{ color: '#22c55e' }}>
+              {rewardSymbol} {rewardText} sent
+            </span>
+          )}
+        </p>
+      </div>
+    </div>
+  )
+}
+
+// ── Referral progress row ─────────────────────────────────────────────────────
+
+function ReferralProgressRow({ referral }: { referral: UserReferralEntry }) {
+  const STATUS_CONFIG: Record<string, { label: string; variant: 'success' | 'warning' | 'destructive' | 'secondary' }> = {
+    pending: { label: 'Pending', variant: 'secondary' },
+    qualified: { label: 'Qualified', variant: 'warning' },
+    rewarded: { label: 'Rewarded', variant: 'success' },
+    rejected: { label: 'Rejected', variant: 'destructive' },
+  }
+  const cfg = STATUS_CONFIG[referral.status] ?? { label: referral.status, variant: 'secondary' as const }
+
+  return (
+    <div
+      className="flex items-center justify-between gap-3 rounded-xl px-4 py-3 transition-colors"
+      style={{ border: '1px solid #1e2a4a' }}
+    >
+      <div>
+        <p className="text-sm font-medium text-white">{referral.referred_user.name}</p>
+        <p className="text-xs text-muted-foreground mt-0.5">
+          #{referral.referred_user.telegram_id} · {new Date(referral.created_at).toLocaleDateString('en-NG', { day: 'numeric', month: 'short', year: 'numeric' })}
+        </p>
+      </div>
+      <Badge variant={cfg.variant}>{cfg.label}</Badge>
+    </div>
+  )
+}
+
 // ── UserDetailPage ────────────────────────────────────────────────────────────
 
 const PAGE_SIZE = 10
@@ -247,6 +327,12 @@ export function UserDetailPage() {
     queryKey: ['user-transactions', id, txPage, txType],
     queryFn: () => usersApi.transactions(id!, txPage, txType),
     enabled: !!id && activeTab === 'transactions',
+  })
+
+  const { data: rewardsData, isLoading: rewardsLoading } = useQuery({
+    queryKey: ['user-rewards', id],
+    queryFn: () => userRewardsApi.get(id!),
+    enabled: !!id && activeTab === 'rewards',
   })
 
   const flagMutation = useMutation({
@@ -437,8 +523,8 @@ export function UserDetailPage() {
           className="flex gap-1 border-b pb-0"
           style={{ borderColor: '#1e2a4a' }}
         >
-          {(['spins', 'transactions'] as TabType[]).map((tab) => {
-            const label = tab === 'spins' ? 'Recent Spins' : 'Transaction History'
+          {(['spins', 'transactions', 'rewards'] as TabType[]).map((tab) => {
+            const label = tab === 'spins' ? 'Recent Spins' : tab === 'transactions' ? 'Transaction History' : 'Rewards & Challenges'
             const isActive = activeTab === tab
             return (
               <button
@@ -539,6 +625,54 @@ export function UserDetailPage() {
                     onPageChange={setTxPage}
                     className="mt-4"
                   />
+                </>
+              )}
+            </div>
+          )}
+
+          {/* Rewards & Challenges */}
+          {activeTab === 'rewards' && (
+            <div className="space-y-5">
+              {rewardsLoading ? (
+                <div className="space-y-3">
+                  {[1, 2, 3].map((i) => <Skeleton key={i} className="h-20 w-full rounded-xl" />)}
+                </div>
+              ) : (
+                <>
+                  {/* Challenges section */}
+                  <div>
+                    <p className="text-sm font-semibold text-white mb-3">Challenges Progress</p>
+                    {(rewardsData?.challenges ?? []).length === 0 ? (
+                      <p className="text-sm text-muted-foreground py-4">No challenge activity yet.</p>
+                    ) : (
+                      <div className="space-y-2">
+                        {(rewardsData?.challenges as UserChallengeProgress[]).map((ch) => (
+                          <ChallengeProgressRow key={ch.challenge_id} challenge={ch} />
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Referrals section */}
+                  <div>
+                    <div className="flex items-center justify-between mb-3">
+                      <p className="text-sm font-semibold text-white">Referrals</p>
+                      {rewardsData?.referrals?.stats && (
+                        <p className="text-xs text-muted-foreground">
+                          {rewardsData.referrals.stats.rewarded} rewarded · {rewardsData.referrals.stats.total_referrals} total
+                        </p>
+                      )}
+                    </div>
+                    {(rewardsData?.referrals?.referrals ?? []).length === 0 ? (
+                      <p className="text-sm text-muted-foreground py-4">No referrals yet.</p>
+                    ) : (
+                      <div className="space-y-2">
+                        {(rewardsData?.referrals.referrals as UserReferralEntry[]).map((ref) => (
+                          <ReferralProgressRow key={ref.id} referral={ref} />
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </>
               )}
             </div>

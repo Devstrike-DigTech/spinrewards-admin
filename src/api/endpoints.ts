@@ -16,6 +16,13 @@ import type {
   UsersListResponse,
   WithdrawalsListResponse,
   KYCQueueListResponse,
+  AdminChallenge,
+  CreateChallengePayload,
+  ChallengeParticipant,
+  ChallengeCompletion,
+  ChallengesListResponse,
+  ReferralsListResponse,
+  UserRewardsData,
 } from '@/types'
 
 // Unwrap the {success, data} envelope all admin endpoints return
@@ -50,15 +57,15 @@ export const auth = {
 // ── Dashboard ─────────────────────────────────────────────────────────────────
 
 export const dashboard = {
-  get: (): Promise<AdminDashboard> =>
-    apiClient.get('/api/v1/admin/dashboard/').then(unwrap<AdminDashboard>),
+  get: (params?: { year?: string; month?: string }): Promise<AdminDashboard> =>
+    apiClient.get('/api/v1/admin/dashboard/', { params }).then(unwrap<AdminDashboard>),
 }
 
 // ── Financials ────────────────────────────────────────────────────────────────
 
 export const financials = {
-  get: (): Promise<AdminFinancials> =>
-    apiClient.get('/api/v1/admin/financials/').then(unwrap<AdminFinancials>),
+  get: (params?: { year?: string; month?: string }): Promise<AdminFinancials> =>
+    apiClient.get('/api/v1/admin/financials/', { params }).then(unwrap<AdminFinancials>),
 }
 
 // ── RTP ───────────────────────────────────────────────────────────────────────
@@ -170,6 +177,45 @@ export const kycQueue = {
     apiClient
       .post(`/api/v1/admin/kyc/${id}/reject/`, { section, reason })
       .then(unwrap),
+}
+
+// ── Challenges ────────────────────────────────────────────────────────────────
+
+export const challenges = {
+  list: (params?: { type?: string; is_active?: boolean; page?: number }): Promise<ChallengesListResponse> =>
+    apiClient.get('/api/v1/admin/challenges/', { params }).then(unwrap<ChallengesListResponse>),
+
+  create: (payload: CreateChallengePayload): Promise<AdminChallenge> =>
+    apiClient.post('/api/v1/admin/challenges/', payload).then(unwrap<AdminChallenge>),
+
+  get: (id: string): Promise<AdminChallenge> =>
+    apiClient.get(`/api/v1/admin/challenges/${id}/`).then(unwrap<AdminChallenge>),
+
+  update: (id: string, payload: Partial<CreateChallengePayload> & { is_active?: boolean; is_visible?: boolean }): Promise<AdminChallenge> =>
+    apiClient.patch(`/api/v1/admin/challenges/${id}/`, payload).then(unwrap<AdminChallenge>),
+
+  delete: (id: string): Promise<void> =>
+    apiClient.delete(`/api/v1/admin/challenges/${id}/`).then(() => undefined),
+
+  participants: (id: string, page = 1): Promise<{ challenge: { id: string; name: string }; count: number; next: string | null; previous: string | null; results: ChallengeParticipant[] }> =>
+    apiClient.get(`/api/v1/admin/challenges/${id}/participants/`, { params: { page } }).then(unwrap),
+
+  completions: (id: string, page = 1): Promise<{ challenge: { id: string; name: string }; total_completions: number; count: number; results: ChallengeCompletion[] }> =>
+    apiClient.get(`/api/v1/admin/challenges/${id}/completions/`, { params: { page } }).then(unwrap),
+}
+
+// ── Referrals ─────────────────────────────────────────────────────────────────
+
+export const referrals = {
+  list: (params?: { status?: string; search?: string; page?: number }): Promise<ReferralsListResponse> =>
+    apiClient.get('/api/v1/admin/referrals/', { params }).then(unwrap<ReferralsListResponse>),
+}
+
+// ── User Rewards ──────────────────────────────────────────────────────────────
+
+export const userRewards = {
+  get: (userId: string): Promise<UserRewardsData> =>
+    apiClient.get(`/api/v1/admin/users/${userId}/rewards/`).then(unwrap<UserRewardsData>),
 }
 
 // ── Fraud ─────────────────────────────────────────────────────────────────────

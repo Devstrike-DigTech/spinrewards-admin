@@ -24,22 +24,28 @@ export interface AdminLoginResponse {
 export interface DashboardKPIs {
   total_revenue: string
   total_revenue_change_pct: string
-  net_profit: string
-  current_rtp: string
-  house_edge_pct: string          // (total_staked - total_won) / total_staked * 100
-  house_edge_change_pct: string
-  player_win_rate_pct: string     // winning_spins / total_spins * 100
-  player_win_rate_change_pct: string
+  net_profit_ggr: string              // total_staked − total_won (GGR)
+  net_profit_ggr_change_pct: string
+  realized_house_edge_pct: string     // (total_staked − total_won) / total_staked × 100
+  player_win_rate_pct: string         // winning_spins / total_spins × 100
+  total_spins: number
+  winning_spins: number
   active_users: number
-  active_users_change_pct: string
   new_users_today: number
 }
 
-export interface ProfitTrendPoint {
+export interface DashboardGraphPoint {
+  day?: number       // present when endpoint is called with a specific month
   month: string
   year: number
-  value: string
+  staked: string
+  won: string
+  ggr: string
+  spins: number
 }
+
+/** @deprecated Use DashboardGraphPoint */
+export type ProfitTrendPoint = DashboardGraphPoint
 
 export interface RecentSpin {
   id: string
@@ -59,59 +65,81 @@ export interface TopWinner {
 
 export interface AdminDashboard {
   kpis: DashboardKPIs
-  profit_trend: ProfitTrendPoint[]
+  graph: DashboardGraphPoint[]
   recent_spins: RecentSpin[]
   top_winners: TopWinner[]
 }
 
 // ── Financials ───────────────────────────────────────────────────────────────
 
-export interface FinancialsKPIs {
-  // Core fields — returned by real API
-  total_deposits: string
-  total_deposits_change_pct: string
-  total_withdrawals: string
-  total_withdrawals_change_pct: string
-  pending_withdrawals: string
-  // Extended fields — returned by real API when ready, optional until then
-  total_deposit_count?: number         // number of deposit transactions
-  avg_deposit?: string                 // total_deposits / total_deposit_count
-  net_cash_position?: string           // total_deposits − total_withdrawals
-  withdrawal_pending_count?: number    // number of queued/pending withdrawal requests
-  withdrawal_count?: number            // total withdrawal transactions processed
-  withdrawal_success_rate?: string     // approved / total * 100
-  ggr?: string                         // gross gaming revenue = total_staked − total_won
-  ggr_margin_pct?: string              // ggr / total_staked * 100
-  withdrawal_rate_pct?: string         // total_withdrawals / total_deposits * 100
+export interface FinancialsCashFlowPoint {
+  day?: number | null
+  month: string
+  year: number
+  count: number
+  amount: string
 }
 
-export interface SpinsBreakdown {
-  // Core fields — returned by real API
-  total_staked: string
-  total_won: string
-  house_fees: string
-  spin_count_total: number
-  spin_count_wins: number
-  spin_count_losses: number
-  // Extended fields — optional until backend adds them
-  avg_stake?: string                   // total_staked / spin_count_total
-  win_rate_pct?: string                // spin_count_wins / spin_count_total * 100
+export interface FinancialsGGRPoint {
+  day?: number | null
+  month: string
+  year: number
+  ggr: string
+  staked: string
+  won: string
 }
 
+export interface AdminFinancials {
+  period: string
+  year: number
+  month: string | null
+  deposits: {
+    total_amount: string
+    total_amount_change_pct: string
+    total_transactions: number
+    average_per_deposit: string
+    net_position: string
+  }
+  withdrawals: {
+    total_amount: string
+    total_amount_change_pct: string
+    pct_of_deposits: string
+    pending_amount: string
+    pending_queue_count: number
+    success_rate_pct: string
+  }
+  spins: {
+    total_spins: number
+    win_rate_pct: string
+    wins_count: number
+    losses_count: number
+    average_stake_per_spin: string
+  }
+  ggr: {
+    ggr_amount: string
+    ggr_change_pct: string
+    ggr_margin_pct: string
+    total_staked: string
+    total_won: string
+    average_stake_per_spin: string
+  }
+  cash_flow: {
+    deposits: FinancialsCashFlowPoint[]
+    withdrawals: FinancialsCashFlowPoint[]
+  }
+  spin_breakdown: {
+    total_ggr: string
+    total_won_by_players: string
+    total_staked: string
+  }
+  ggr_trend: FinancialsGGRPoint[]
+}
+
+/** @deprecated — kept so mock data file compiles without rewrite */
 export interface CashFlowPoint {
   month: string
   year: number
   value: string
-}
-
-export interface AdminFinancials {
-  kpis: FinancialsKPIs
-  spins_breakdown: SpinsBreakdown
-  cash_flow: {
-    deposits: CashFlowPoint[]
-    withdrawals: CashFlowPoint[]
-  }
-  ggr_trend?: CashFlowPoint[]          // optional until backend adds it
 }
 
 // ── RTP ──────────────────────────────────────────────────────────────────────
@@ -369,6 +397,144 @@ export interface WithdrawalsListResponse extends PaginatedResponse<AdminWithdraw
 
 export interface KYCQueueListResponse extends PaginatedResponse<AdminKYCQueueItem> {
   overview: KYCQueueOverview
+}
+
+// ── Challenges ───────────────────────────────────────────────────────────────
+
+export interface AdminChallenge {
+  id: string
+  name: string
+  description: string
+  type: string
+  recurrence: string
+  criteria: Record<string, unknown>
+  reward: {
+    type: string
+    amount: number
+  }
+  is_active: boolean
+  is_visible: boolean
+  max_completions_per_user: number | null
+  starts_at: string | null
+  expires_at: string | null
+  created_at: string
+  participant_count: number
+  completion_count: number
+}
+
+export interface CreateChallengePayload {
+  name: string
+  description?: string
+  type: string
+  recurrence: string
+  criteria: Record<string, unknown>
+  reward: { type: string; amount: number }
+  max_completions_per_user?: number | null
+  is_active?: boolean
+  is_visible?: boolean
+  starts_at?: string | null
+  expires_at?: string | null
+}
+
+export interface ChallengeParticipant {
+  user_id: string
+  name: string
+  telegram_id: number
+  current_count: number
+  target_count: number
+  progress_pct: number
+  is_completed: boolean
+  completed_at: string | null
+  reward_claimed: boolean
+  window_start: string
+}
+
+export interface ChallengeCompletion {
+  user_id: string
+  name: string
+  telegram_id: number
+  completed_at: string
+  reward_claimed: boolean
+  reward_claimed_at: string | null
+  window_start: string
+}
+
+export interface ChallengesListResponse extends PaginatedResponse<AdminChallenge> {}
+
+// ── Referrals ────────────────────────────────────────────────────────────────
+
+export interface AdminReferral {
+  id: string
+  referrer: {
+    id: string
+    name: string
+    telegram_id: number
+  }
+  referred_user: {
+    id: string
+    name: string
+    telegram_id: number
+  }
+  code: string
+  status: 'pending' | 'qualified' | 'rewarded' | 'rejected'
+  qualified_at: string | null
+  rewarded_at: string | null
+  reward_snapshot: Record<string, unknown>
+  created_at: string
+}
+
+export interface ReferralsOverview {
+  total: number
+  pending: number
+  qualified: number
+  rewarded: number
+}
+
+export interface ReferralsListResponse {
+  overview: ReferralsOverview
+  count: number
+  next: string | null
+  previous: string | null
+  results: AdminReferral[]
+}
+
+// ── User Rewards (for UserDetailPage) ────────────────────────────────────────
+
+export interface UserChallengeProgress {
+  challenge_id: string
+  challenge_name: string
+  challenge_type: string
+  recurrence: string
+  reward: { type: string; amount: number }
+  current_count: number
+  target_count: number
+  progress_pct: number
+  is_completed: boolean
+  completed_at: string | null
+  reward_claimed: boolean
+  reward_claimed_at: string | null
+}
+
+export interface UserReferralEntry {
+  id: string
+  referred_user: {
+    id: string
+    name: string
+    telegram_id: number
+  }
+  code: string
+  status: 'pending' | 'qualified' | 'rewarded' | 'rejected'
+  qualified_at: string | null
+  rewarded_at: string | null
+  created_at: string
+}
+
+export interface UserRewardsData {
+  challenges: UserChallengeProgress[]
+  referrals: {
+    stats: { total_referrals: number; pending: number; qualified: number; rewarded: number }
+    referrals: UserReferralEntry[]
+  }
 }
 
 // Legacy aliases so mock data compiles without a full rewrite

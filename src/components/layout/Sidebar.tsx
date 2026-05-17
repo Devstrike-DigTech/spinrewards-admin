@@ -9,6 +9,8 @@ import {
   DollarSign,
   ShieldAlert,
   Settings,
+  Trophy,
+  Share2,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Separator } from '@/components/ui/separator'
@@ -66,6 +68,30 @@ export function Sidebar() {
           <Wallet className="h-4 w-4 shrink-0" />
           Withdrawals
         </NavLink>
+
+        {/* Rewards & Challenges section */}
+        <div className="pt-2 pb-1 px-3">
+          <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/50">
+            Rewards
+          </p>
+        </div>
+
+        <NavLink to="/challenges" className={({ isActive }) => navItemClass(isActive)}>
+          <Trophy className="h-4 w-4 shrink-0" />
+          Challenges
+        </NavLink>
+
+        <NavLink to="/referrals" className={({ isActive }) => navItemClass(isActive)}>
+          <Share2 className="h-4 w-4 shrink-0" />
+          Referrals
+        </NavLink>
+
+        {/* separator before compliance */}
+        <div className="pt-2 pb-1 px-3">
+          <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/50">
+            Compliance
+          </p>
+        </div>
 
         <NavLink to="/fraud-risk" className={({ isActive }) => navItemClass(isActive)}>
           <ShieldAlert className="h-4 w-4 shrink-0" />
