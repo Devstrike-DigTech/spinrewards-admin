@@ -61,10 +61,12 @@ export function LoginPage() {
         <div className="absolute top-1/3 left-1/3 h-48 w-48 rounded-full opacity-5" style={{ background: '#C9961A' }} />
 
         <div className="relative z-10 text-center">
-          <div className="mb-8 flex items-center justify-center gap-2">
-            <div className="flex h-16 w-16 items-center justify-center rounded-2xl text-2xl font-black text-white" style={{ background: '#1A237E' }}>
-              SR
-            </div>
+          <div className="mb-8 flex items-center justify-center">
+            <img
+              src="/logo.png"
+              alt="Spin Rewards"
+              className="h-24 w-24 drop-shadow-[0_0_24px_rgba(201,150,26,0.4)]"
+            />
           </div>
           <h1 className="mb-2 text-4xl font-black text-white tracking-tight">
             Spin<span style={{ color: '#C9961A' }}>Rewards</span>
@@ -96,10 +98,8 @@ export function LoginPage() {
       <div className="flex w-full lg:w-1/2 items-center justify-center p-8">
         <div className="w-full max-w-md">
           {/* Mobile logo */}
-          <div className="mb-8 flex items-center gap-2 lg:hidden">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl text-sm font-black text-white" style={{ background: '#1A237E' }}>
-              SR
-            </div>
+          <div className="mb-8 flex items-center gap-3 lg:hidden">
+            <img src="/logo.png" alt="Spin Rewards" className="h-10 w-10" />
             <div className="flex items-baseline gap-1">
               <span className="text-xl font-black text-white">SpinRewards</span>
               <span className="rounded px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider" style={{ background: '#C9961A22', color: '#C9961A' }}>
