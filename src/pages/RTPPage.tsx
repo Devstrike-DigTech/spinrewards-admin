@@ -493,7 +493,7 @@ function StakeModal({
       rtpApi.create({
         name: values.name,
         wheel_type: values.wheel_type,
-        currency_type: 'cash',
+        currency_type: 'coin',
         min_stake: String(values.min_stake),
         max_stake: String(values.max_stake),
         rtp_target: String(values.rtp_target),
