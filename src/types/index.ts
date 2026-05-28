@@ -8,8 +8,11 @@ export interface AdminAccount {
   id: string
   email: string
   display_name: string
-  is_staff: boolean
-  is_superuser: boolean
+  role: string
+  role_label: string
+  permissions: string[]
+  is_staff?: boolean
+  is_superuser?: boolean
 }
 
 export interface AdminLoginResponse {
@@ -17,6 +20,44 @@ export interface AdminLoginResponse {
   refresh_token: string
   token_type: string
   admin: AdminAccount
+}
+
+// ── Admin Management ─────────────────────────────────────────────────────────
+
+export interface AdminMember {
+  id: string
+  email: string
+  display_name: string
+  role: string
+  role_label: string
+  permissions: string[]
+  is_active: boolean
+  last_login_at: string | null
+  created_at: string
+}
+
+export interface AdminRole {
+  value: string
+  label: string
+  permissions: string[]
+}
+
+export interface CreateAdminPayload {
+  email: string
+  password: string
+  display_name: string
+  role: string
+}
+
+export interface UpdateAdminPayload {
+  display_name?: string
+  role?: string
+  is_active?: boolean
+}
+
+export interface AdminMembersListResponse {
+  count: number
+  results: AdminMember[]
 }
 
 // ── Dashboard ────────────────────────────────────────────────────────────────
@@ -187,8 +228,18 @@ export interface CreateRTPPayload {
 }
 
 export interface UpdateRTPPayload {
+  name?: string
   is_active?: boolean
-  segments?: { position: number; probability_weight: number }[]
+  rtp_target?: string
+  min_stake?: string
+  max_stake?: string
+  segments?: {
+    position: number
+    probability_weight: number
+    label?: string
+    color?: string
+    multiplier?: string
+  }[]
 }
 
 // ── Users ────────────────────────────────────────────────────────────────────
