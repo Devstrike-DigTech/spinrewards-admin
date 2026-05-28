@@ -9,6 +9,7 @@ import { challengesApi } from '@/api/index'
 import type { AdminChallenge, ChallengeParticipant, ChallengeCompletion, CreateChallengePayload } from '@/types'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Badge } from '@/components/ui/badge'
+import { useCan } from '@/lib/permissions'
 import {
   Dialog,
   DialogContent,
@@ -923,6 +924,7 @@ function ChallengeRow({
   onViewParticipants: (c: AdminChallenge) => void
   onViewCompletions: (c: AdminChallenge) => void
 }) {
+  const can = useCan()
   const qc = useQueryClient()
 
   const toggleMutation = useMutation({
@@ -1010,27 +1012,31 @@ function ChallengeRow({
       {/* Actions */}
       <td className="px-4 py-3">
         <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
-          <button
-            onClick={() => toggleMutation.mutate()}
-            disabled={toggleMutation.isPending}
-            title={challenge.is_active ? 'Deactivate' : 'Activate'}
-            className="p-1.5 rounded-lg text-muted-foreground hover:text-white hover:bg-white/5 transition-colors disabled:opacity-40"
-          >
-            {challenge.is_active
-              ? <ToggleRight className="h-4 w-4" style={{ color: '#22c55e' }} />
-              : <ToggleLeft className="h-4 w-4" />
-            }
-          </button>
-          <button
-            onClick={() => {
-              if (confirm(`Deactivate "${challenge.name}"?`)) deleteMutation.mutate()
-            }}
-            disabled={deleteMutation.isPending}
-            title="Deactivate / delete"
-            className="p-1.5 rounded-lg text-muted-foreground hover:text-red-400 hover:bg-red-400/10 transition-colors disabled:opacity-40"
-          >
-            <Trash2 className="h-4 w-4" />
-          </button>
+          {can('edit_challenge') && (
+            <button
+              onClick={() => toggleMutation.mutate()}
+              disabled={toggleMutation.isPending}
+              title={challenge.is_active ? 'Deactivate' : 'Activate'}
+              className="p-1.5 rounded-lg text-muted-foreground hover:text-white hover:bg-white/5 transition-colors disabled:opacity-40"
+            >
+              {challenge.is_active
+                ? <ToggleRight className="h-4 w-4" style={{ color: '#22c55e' }} />
+                : <ToggleLeft className="h-4 w-4" />
+              }
+            </button>
+          )}
+          {can('delete_challenge') && (
+            <button
+              onClick={() => {
+                if (confirm(`Deactivate "${challenge.name}"?`)) deleteMutation.mutate()
+              }}
+              disabled={deleteMutation.isPending}
+              title="Deactivate / delete"
+              className="p-1.5 rounded-lg text-muted-foreground hover:text-red-400 hover:bg-red-400/10 transition-colors disabled:opacity-40"
+            >
+              <Trash2 className="h-4 w-4" />
+            </button>
+          )}
         </div>
       </td>
     </tr>
@@ -1042,6 +1048,7 @@ function ChallengeRow({
 const PAGE_SIZE = 10
 
 export function ChallengesPage() {
+  const can = useCan()
   const [page, setPage] = useState(1)
   const [typeFilter, setTypeFilter] = useState('')
   const [activeFilter, setActiveFilter] = useState<'all' | 'active' | 'inactive'>('all')
@@ -1082,14 +1089,16 @@ export function ChallengesPage() {
           <Trophy className="h-5 w-5" style={{ color: '#C9961A' }} />
           <h1 className="text-lg font-bold text-white">Challenges</h1>
         </div>
-        <button
-          onClick={() => setShowCreate(true)}
-          className="flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-xl transition-opacity hover:opacity-90"
-          style={{ background: '#C9961A', color: '#07090F' }}
-        >
-          <Plus className="h-4 w-4" />
-          New Challenge
-        </button>
+        {can('create_challenge') && (
+          <button
+            onClick={() => setShowCreate(true)}
+            className="flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-xl transition-opacity hover:opacity-90"
+            style={{ background: '#C9961A', color: '#07090F' }}
+          >
+            <Plus className="h-4 w-4" />
+            New Challenge
+          </button>
+        )}
       </div>
 
       {/* Stat cards */}

@@ -14,6 +14,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
+import { useCan } from '@/lib/permissions'
 
 type TabType = 'spins' | 'transactions' | 'rewards'
 
@@ -297,6 +298,7 @@ function ReferralProgressRow({ referral }: { referral: UserReferralEntry }) {
 const PAGE_SIZE = 10
 
 export function UserDetailPage() {
+  const can = useCan()
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
@@ -454,7 +456,8 @@ export function UserDetailPage() {
                     <RiskBadge risk={user.risk} />
                   </div>
                 </div>
-                {/* 3-dot action menu */}
+                {/* 3-dot action menu — only shown when the admin has at least one user action */}
+                {(can('flag_user') || can('delete_user')) && (
                 <div className="relative">
                   <button
                     onClick={() => setMenuOpen((v) => !v)}
@@ -462,32 +465,37 @@ export function UserDetailPage() {
                   >
                     <MoreVertical className="h-4 w-4" />
                   </button>
-                  {menuOpen && (
+                  {menuOpen && (can('flag_user') || can('delete_user')) && (
                     <div
                       className="absolute right-0 top-full mt-1 z-20 w-36 rounded-xl border border-[#1e2a4a] py-1 shadow-xl"
                       style={{ background: '#0D1836' }}
                     >
-                      <button
-                        className="block w-full px-4 py-2 text-left text-sm text-amber-400 hover:bg-white/5 transition-colors"
-                        onClick={() => {
-                          setMenuOpen(false)
-                          setConfirmState({ type: 'flag' })
-                        }}
-                      >
-                        Flag User
-                      </button>
-                      <button
-                        className="block w-full px-4 py-2 text-left text-sm text-red-400 hover:bg-white/5 transition-colors"
-                        onClick={() => {
-                          setMenuOpen(false)
-                          setConfirmState({ type: 'ban' })
-                        }}
-                      >
-                        Ban User
-                      </button>
+                      {can('flag_user') && (
+                        <button
+                          className="block w-full px-4 py-2 text-left text-sm text-amber-400 hover:bg-white/5 transition-colors"
+                          onClick={() => {
+                            setMenuOpen(false)
+                            setConfirmState({ type: 'flag' })
+                          }}
+                        >
+                          Flag User
+                        </button>
+                      )}
+                      {can('delete_user') && (
+                        <button
+                          className="block w-full px-4 py-2 text-left text-sm text-red-400 hover:bg-white/5 transition-colors"
+                          onClick={() => {
+                            setMenuOpen(false)
+                            setConfirmState({ type: 'ban' })
+                          }}
+                        >
+                          Ban User
+                        </button>
+                      )}
                     </div>
                   )}
                 </div>
+                )}
               </div>
 
               {/* Balance + Staked */}

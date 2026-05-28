@@ -14,6 +14,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
+import { useCan } from '@/lib/permissions'
 
 // ── Stat card ─────────────────────────────────────────────────────────────────
 
@@ -130,6 +131,7 @@ const FILTER_OPTIONS = [
 ]
 
 export function UsersPage() {
+  const can = useCan()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
 
@@ -362,36 +364,43 @@ export function UsersPage() {
                           onClick={(e) => e.stopPropagation()}
                         >
                           <div className="flex items-center gap-2">
-                            <button
-                              className="px-3 py-1 rounded-lg text-xs font-medium border transition-colors hover:opacity-80"
-                              style={{
-                                borderColor: '#C9961A44',
-                                color: '#C9961A',
-                                background: 'rgba(201,150,26,0.08)',
-                              }}
-                              onClick={() =>
-                                setConfirmState({
-                                  type: 'flag',
-                                  userId: user.id,
-                                  userName: user.name,
-                                })
-                              }
-                            >
-                              Flag
-                            </button>
-                            <button
-                              className="px-3 py-1 rounded-lg text-xs font-medium transition-colors hover:opacity-80"
-                              style={{ background: '#ef444422', color: '#ef4444', border: '1px solid #ef444433' }}
-                              onClick={() =>
-                                setConfirmState({
-                                  type: 'ban',
-                                  userId: user.id,
-                                  userName: user.name,
-                                })
-                              }
-                            >
-                              Ban
-                            </button>
+                            {can('flag_user') && (
+                              <button
+                                className="px-3 py-1 rounded-lg text-xs font-medium border transition-colors hover:opacity-80"
+                                style={{
+                                  borderColor: '#C9961A44',
+                                  color: '#C9961A',
+                                  background: 'rgba(201,150,26,0.08)',
+                                }}
+                                onClick={() =>
+                                  setConfirmState({
+                                    type: 'flag',
+                                    userId: user.id,
+                                    userName: user.name,
+                                  })
+                                }
+                              >
+                                Flag
+                              </button>
+                            )}
+                            {can('delete_user') && (
+                              <button
+                                className="px-3 py-1 rounded-lg text-xs font-medium transition-colors hover:opacity-80"
+                                style={{ background: '#ef444422', color: '#ef4444', border: '1px solid #ef444433' }}
+                                onClick={() =>
+                                  setConfirmState({
+                                    type: 'ban',
+                                    userId: user.id,
+                                    userName: user.name,
+                                  })
+                                }
+                              >
+                                Ban
+                              </button>
+                            )}
+                            {!can('flag_user') && !can('delete_user') && (
+                              <span className="text-xs text-muted-foreground">—</span>
+                            )}
                           </div>
                         </td>
                       </tr>

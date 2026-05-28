@@ -12,6 +12,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
+import { useCan } from '@/lib/permissions'
 import {
   Dialog,
   DialogContent,
@@ -118,6 +119,7 @@ function WheelCard({
   wheel: RTPWheel
   onOpenEdit: () => void
 }) {
+  const can = useCan()
   const queryClient = useQueryClient()
   const segments = wheel.segments ?? []
 
@@ -197,17 +199,20 @@ function WheelCard({
   })
 
   function startEditing() {
+    if (!can('edit_rtp')) return
     if (!isEditing) setIsEditing(true)
   }
 
   // Each slider is fully independent — no redistribution
   function handlePctChange(idx: number, v: number) {
     startEditing()
+    if (!can('edit_rtp')) return
     setLocalPcts((prev) => prev.map((val, j) => j === idx ? Math.max(0, Math.min(100, v)) : val))
   }
 
   function handleRtpChange(v: number) {
     startEditing()
+    if (!can('edit_rtp')) return
     setLocalRtp(v)
   }
 
@@ -426,23 +431,27 @@ function WheelCard({
             >
               Cancel
             </button>
-            <button
-              onClick={handleSave}
-              disabled={updateMutation.isPending || !canSave}
-              className="flex items-center gap-1.5 px-4 py-1.5 text-sm font-semibold rounded-lg text-[#07090F] transition-opacity disabled:opacity-40 disabled:cursor-not-allowed"
-              style={{ background: canSave ? '#C9961A' : '#4b5563' }}
-            >
-              <Save className="h-3.5 w-3.5" />
-              {updateMutation.isPending ? 'Saving…' : 'Save'}
-            </button>
+            {can('edit_rtp') && (
+              <button
+                onClick={handleSave}
+                disabled={updateMutation.isPending || !canSave}
+                className="flex items-center gap-1.5 px-4 py-1.5 text-sm font-semibold rounded-lg text-[#07090F] transition-opacity disabled:opacity-40 disabled:cursor-not-allowed"
+                style={{ background: canSave ? '#C9961A' : '#4b5563' }}
+              >
+                <Save className="h-3.5 w-3.5" />
+                {updateMutation.isPending ? 'Saving…' : 'Save'}
+              </button>
+            )}
           </>
         ) : (
-          <button
-            onClick={onOpenEdit}
-            className="px-4 py-1.5 text-sm text-muted-foreground hover:text-white rounded-lg border border-[#1e2a4a] transition-colors"
-          >
-            Edit
-          </button>
+          can('edit_rtp') && (
+            <button
+              onClick={onOpenEdit}
+              className="px-4 py-1.5 text-sm text-muted-foreground hover:text-white rounded-lg border border-[#1e2a4a] transition-colors"
+            >
+              Edit
+            </button>
+          )
         )}
       </div>
     </div>
@@ -958,6 +967,7 @@ function StakeModal({
 // ── RTPPage ───────────────────────────────────────────────────────────────────
 
 export function RTPPage() {
+  const can = useCan()
   const [dialogState, setDialogState] = useState<{ open: boolean; tier?: RTPWheel }>({
     open: false,
   })
@@ -980,14 +990,16 @@ export function RTPPage() {
               Configure spin wheels, segment probabilities, and payout targets.
             </p>
           </div>
-          <Button
-            onClick={() => setDialogState({ open: true })}
-            className="font-semibold text-[#07090F]"
-            style={{ background: '#C9961A' }}
-          >
-            <Plus className="mr-2 h-4 w-4" />
-            Create Stake
-          </Button>
+          {can('create_rtp') && (
+            <Button
+              onClick={() => setDialogState({ open: true })}
+              className="font-semibold text-[#07090F]"
+              style={{ background: '#C9961A' }}
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              Create Stake
+            </Button>
+          )}
         </div>
 
         {/* Legend */}
@@ -1034,14 +1046,16 @@ export function RTPPage() {
                 style={{ background: '#0D1836', border: '1px solid #1e2a4a' }}
               >
                 <p className="text-muted-foreground mb-3">No wheels configured yet.</p>
-                <Button
-                  onClick={() => setDialogState({ open: true })}
-                  className="font-semibold text-[#07090F]"
-                  style={{ background: '#C9961A' }}
-                >
-                  <Plus className="mr-2 h-4 w-4" />
-                  Create First Stake
-                </Button>
+                {can('create_rtp') && (
+                  <Button
+                    onClick={() => setDialogState({ open: true })}
+                    className="font-semibold text-[#07090F]"
+                    style={{ background: '#C9961A' }}
+                  >
+                    <Plus className="mr-2 h-4 w-4" />
+                    Create First Stake
+                  </Button>
+                )}
               </div>
             )}
           </div>
