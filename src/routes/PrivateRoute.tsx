@@ -20,7 +20,7 @@ export function PrivateRoute() {
     authApi.me()
       .then((user) => {
         // Refresh admin user info in case display_name or roles changed
-        setAuth(tokens, user)
+        setAuth(tokens, { role: '', role_label: '', permissions: [], ...user })
         setState('ok')
       })
       .catch(() => {

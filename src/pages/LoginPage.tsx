@@ -35,7 +35,12 @@ export function LoginPage() {
       const res = await authApi.login(values.email, values.password)
       setAuth(
         { access_token: res.access_token, refresh_token: res.refresh_token },
-        res.admin,
+        {
+          role: '',
+          role_label: '',
+          permissions: [],
+          ...res.admin,
+        },
       )
       navigate('/')
     } catch (err: any) {
@@ -63,9 +68,9 @@ export function LoginPage() {
         <div className="relative z-10 text-center">
           <div className="mb-8 flex items-center justify-center">
             <img
-              src="/logo.png"
+              src="/logo-full.png"
               alt="Spin Rewards"
-              className="h-24 w-24 drop-shadow-[0_0_24px_rgba(201,150,26,0.4)]"
+              className="h-96 w-96 drop-shadow-[0_0_24px_rgba(201,150,26,0.4)]"
             />
           </div>
           <h1 className="mb-2 text-4xl font-black text-white tracking-tight">
@@ -74,7 +79,7 @@ export function LoginPage() {
           <p className="mb-1 text-lg font-semibold text-white/80">Admin Dashboard</p>
           <p className="text-sm text-white/40">Real-time insights. Full control. Zero guesswork.</p>
 
-          <div className="mt-10 flex flex-col gap-3 text-left">
+          {/* <div className="mt-10 flex flex-col gap-3 text-left">
             {[
               { icon: '📊', text: 'Live analytics & revenue tracking' },
               { icon: '🔒', text: 'KYC verification queue' },
@@ -90,7 +95,7 @@ export function LoginPage() {
                 <span className="text-sm text-white/70">{item.text}</span>
               </div>
             ))}
-          </div>
+          </div> */}
         </div>
       </div>
 

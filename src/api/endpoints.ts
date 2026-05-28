@@ -23,6 +23,11 @@ import type {
   ChallengesListResponse,
   ReferralsListResponse,
   UserRewardsData,
+  AdminMember,
+  AdminRole,
+  CreateAdminPayload,
+  UpdateAdminPayload,
+  AdminMembersListResponse,
 } from '@/types'
 
 // Unwrap the {success, data} envelope all admin endpoints return
@@ -235,4 +240,40 @@ export const auditLog = {
     apiClient
       .get('/api/v1/admin/audit-logs/', { params })
       .then(unwrap<PaginatedResponse<AuditLogEntry>>),
+}
+
+// ── Admin Members ─────────────────────────────────────────────────────────────
+
+export const adminMembers = {
+  roles: (): Promise<AdminRole[]> =>
+    apiClient
+      .get('/api/v1/admin/roles/')
+      .then((r) => unwrap<{ roles: AdminRole[] }>(r).roles ?? []),
+
+  list: (params?: {
+    role?: string
+    is_active?: boolean
+    search?: string
+    page?: number
+  }): Promise<AdminMembersListResponse> =>
+    apiClient
+      .get('/api/v1/admin/admins/', { params })
+      .then(unwrap<AdminMembersListResponse>),
+
+  get: (id: string): Promise<AdminMember> =>
+    apiClient.get(`/api/v1/admin/admins/${id}/`).then(unwrap<AdminMember>),
+
+  create: (payload: CreateAdminPayload): Promise<AdminMember> =>
+    apiClient.post('/api/v1/admin/admins/', payload).then(unwrap<AdminMember>),
+
+  update: (id: string, payload: UpdateAdminPayload): Promise<AdminMember> =>
+    apiClient.patch(`/api/v1/admin/admins/${id}/`, payload).then(unwrap<AdminMember>),
+
+  deactivate: (id: string): Promise<void> =>
+    apiClient.delete(`/api/v1/admin/admins/${id}/`).then(() => undefined),
+
+  resetPassword: (id: string, new_password: string): Promise<void> =>
+    apiClient
+      .post(`/api/v1/admin/admins/${id}/reset-password/`, { new_password })
+      .then(() => undefined),
 }
