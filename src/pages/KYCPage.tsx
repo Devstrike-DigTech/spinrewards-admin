@@ -16,6 +16,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
+import { useCan } from '@/lib/permissions'
 
 // ── Section status display ────────────────────────────────────────────────────
 
@@ -73,6 +74,7 @@ function SectionPanel({
   kycId: string
   onMutated: () => void
 }) {
+  const can = useCan()
   const [rejectReason, setRejectReason] = useState('')
   const [showReject, setShowReject] = useState(false)
 
@@ -88,7 +90,8 @@ function SectionPanel({
     onError: (err: any) => toast.error(err?.response?.data?.message ?? 'Failed.'),
   })
 
-  const canAct = info.status === 'pending' || info.status === 'requires_correction'
+  const sectionNeedsAction = info.status === 'pending' || info.status === 'requires_correction'
+  const canAct = sectionNeedsAction && (can('approve_kyc') || can('reject_kyc'))
 
   return (
     <div className="rounded-xl p-4 space-y-3" style={{ background: '#0A0E1E', border: '1px solid #1e2a4a' }}>
@@ -133,23 +136,27 @@ function SectionPanel({
         <div className="space-y-2">
           {!showReject ? (
             <div className="flex gap-2">
-              <Button
-                size="sm"
-                className="text-xs font-semibold text-white h-7 px-3"
-                style={{ background: '#22c55e' }}
-                disabled={approveMutation.isPending}
-                onClick={() => approveMutation.mutate()}
-              >
-                {approveMutation.isPending ? 'Approving…' : 'Approve'}
-              </Button>
-              <Button
-                size="sm"
-                variant="destructive"
-                className="text-xs font-semibold h-7 px-3"
-                onClick={() => setShowReject(true)}
-              >
-                Reject
-              </Button>
+              {can('approve_kyc') && (
+                <Button
+                  size="sm"
+                  className="text-xs font-semibold text-white h-7 px-3"
+                  style={{ background: '#22c55e' }}
+                  disabled={approveMutation.isPending}
+                  onClick={() => approveMutation.mutate()}
+                >
+                  {approveMutation.isPending ? 'Approving…' : 'Approve'}
+                </Button>
+              )}
+              {can('reject_kyc') && (
+                <Button
+                  size="sm"
+                  variant="destructive"
+                  className="text-xs font-semibold h-7 px-3"
+                  onClick={() => setShowReject(true)}
+                >
+                  Reject
+                </Button>
+              )}
             </div>
           ) : (
             <div className="space-y-2">
@@ -190,6 +197,7 @@ function KYCDetailDialog({
   open: boolean
   onClose: () => void
 }) {
+  const can = useCan()
   const queryClient = useQueryClient()
 
   const approveAllMutation = useMutation({
@@ -233,7 +241,7 @@ function KYCDetailDialog({
               <span className="text-sm text-muted-foreground">Overall status</span>
               <div className="flex items-center gap-3">
                 <OverallBadge status={item.overall_status} />
-                {item.overall_status !== 'approved' && (
+                {item.overall_status !== 'approved' && can('approve_kyc') && (
                   <Button
                     size="sm"
                     className="text-xs font-semibold text-white h-7 px-3"

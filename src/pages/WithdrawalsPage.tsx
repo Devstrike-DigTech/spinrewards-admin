@@ -15,6 +15,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
+import { useCan } from '@/lib/permissions'
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -337,6 +338,7 @@ const TABS: { key: TabKey; label: string; statuses: string[] }[] = [
 // ── WithdrawalsPage ────────────────────────────────────────────────────────────
 
 export function WithdrawalsPage() {
+  const can = useCan()
   const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState<TabKey>('pending')
   const [search, setSearch] = useState('')
@@ -635,28 +637,35 @@ export function WithdrawalsPage() {
                         <td className="px-4 py-3">
                           {activeTab === 'pending' && (
                             <div className="flex items-center gap-2">
-                              <button
-                                className="px-3 py-1 rounded-lg text-xs font-medium border transition-colors hover:opacity-80"
-                                style={{
-                                  borderColor: '#22c55e55',
-                                  color: '#22c55e',
-                                  background: 'rgba(34,197,94,0.08)',
-                                }}
-                                onClick={() => setApproveTarget(wd)}
-                              >
-                                Approve
-                              </button>
-                              <button
-                                className="px-3 py-1 rounded-lg text-xs font-medium border transition-colors hover:opacity-80"
-                                style={{
-                                  borderColor: '#ef444455',
-                                  color: '#ef4444',
-                                  background: 'rgba(239,68,68,0.08)',
-                                }}
-                                onClick={() => setRejectTarget(wd)}
-                              >
-                                Reject
-                              </button>
+                              {can('approve_withdrawal') && (
+                                <button
+                                  className="px-3 py-1 rounded-lg text-xs font-medium border transition-colors hover:opacity-80"
+                                  style={{
+                                    borderColor: '#22c55e55',
+                                    color: '#22c55e',
+                                    background: 'rgba(34,197,94,0.08)',
+                                  }}
+                                  onClick={() => setApproveTarget(wd)}
+                                >
+                                  Approve
+                                </button>
+                              )}
+                              {can('reject_withdrawal') && (
+                                <button
+                                  className="px-3 py-1 rounded-lg text-xs font-medium border transition-colors hover:opacity-80"
+                                  style={{
+                                    borderColor: '#ef444455',
+                                    color: '#ef4444',
+                                    background: 'rgba(239,68,68,0.08)',
+                                  }}
+                                  onClick={() => setRejectTarget(wd)}
+                                >
+                                  Reject
+                                </button>
+                              )}
+                              {!can('approve_withdrawal') && !can('reject_withdrawal') && (
+                                <span className="text-xs text-muted-foreground">—</span>
+                              )}
                             </div>
                           )}
                           {activeTab === 'approved' && (
