@@ -8,6 +8,7 @@ import type { AdminUserDetail, UserSpinRecord, UserTransaction, UserChallengePro
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Pagination } from '@/components/Pagination'
+import { formatCurrency, formatUsdt } from '@/lib/utils'
 import {
   Dialog,
   DialogContent,
@@ -17,6 +18,19 @@ import {
 import { useCan } from '@/lib/permissions'
 
 type TabType = 'spins' | 'transactions' | 'rewards'
+
+// ── Balance tile ──────────────────────────────────────────────────────────────
+
+function BalanceTile({ label, value, highlight }: { label: string; value: string; highlight?: boolean }) {
+  return (
+    <div className="rounded-xl px-3 py-2.5" style={{ border: '1px solid #1e2a4a' }}>
+      <p className="text-[10px] text-muted-foreground">{label}</p>
+      <p className="mt-0.5 truncate text-sm font-bold" style={{ color: highlight ? '#C9961A' : '#e2e8f0' }}>
+        {value}
+      </p>
+    </div>
+  )
+}
 
 // ── Filter pills ──────────────────────────────────────────────────────────────
 
@@ -498,25 +512,57 @@ export function UserDetailPage() {
                 )}
               </div>
 
-              {/* Balance + Staked */}
-              <div className="grid grid-cols-2 gap-3">
-                <div
-                  className="rounded-xl px-4 py-3"
-                  style={{ border: '1px solid #1e2a4a' }}
-                >
-                  <p className="text-xs text-muted-foreground mb-1">Balance</p>
-                  <p className="text-2xl font-bold" style={{ color: '#C9961A' }}>
-                    {parseFloat(user.cash_balance).toLocaleString()}
-                  </p>
+              {/* Wallet — 6 balances, never summed across currencies */}
+              <div className="space-y-3">
+                <div>
+                  <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Coin buckets</p>
+                  <div className="grid grid-cols-3 gap-2">
+                    <BalanceTile label="Naira Coins" value={`₦ ${parseFloat(user.wallet.naira_coins).toLocaleString()}`} />
+                    <BalanceTile label="Crypto Coins" value={formatUsdt(user.wallet.crypto_coins)} />
+                    <BalanceTile label="Bonus Coins" value={parseFloat(user.wallet.bonus_coins).toLocaleString()} />
+                  </div>
                 </div>
-                <div
-                  className="rounded-xl px-4 py-3"
-                  style={{ border: '1px solid #1e2a4a' }}
-                >
-                  <p className="text-xs text-muted-foreground mb-1">Staked</p>
-                  <p className="text-2xl font-bold" style={{ color: '#C9961A' }}>
-                    {parseFloat(user.staked).toLocaleString()}
-                  </p>
+                <div>
+                  <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Withdrawable</p>
+                  <div className="grid grid-cols-3 gap-2">
+                    <BalanceTile label="Naira" value={formatCurrency(user.wallet.naira_withdraw_balance)} highlight />
+                    <BalanceTile label="Crypto" value={formatUsdt(user.wallet.crypto_withdraw_balance)} highlight />
+                    <BalanceTile label="Staked" value={parseFloat(user.wallet.staked).toLocaleString()} />
+                  </div>
+                </div>
+
+                {/* Payment methods */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="rounded-xl px-4 py-3" style={{ border: '1px solid #1e2a4a' }}>
+                    <p className="mb-2 text-xs font-semibold text-white">Bank Accounts</p>
+                    {user.bank_accounts.length === 0 ? (
+                      <p className="text-xs text-muted-foreground">None</p>
+                    ) : (
+                      user.bank_accounts.map((b, i) => (
+                        <div key={b.id ?? i} className="mb-1.5 last:mb-0">
+                          <p className="text-xs text-foreground">
+                            {b.is_default && '★ '}{b.bank_name || 'Bank'} {b.account_number_masked}
+                          </p>
+                          <p className="text-[10px] text-muted-foreground">{b.account_name} · {b.verified_at}</p>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                  <div className="rounded-xl px-4 py-3" style={{ border: '1px solid #1e2a4a' }}>
+                    <p className="mb-2 text-xs font-semibold text-white">Crypto Wallets</p>
+                    {user.crypto_wallets.length === 0 ? (
+                      <p className="text-xs text-muted-foreground">None</p>
+                    ) : (
+                      user.crypto_wallets.map((w) => (
+                        <div key={w.id} className="mb-1.5 last:mb-0">
+                          <p className="text-xs text-foreground">
+                            {w.is_default && '★ '}{w.network} {w.address_masked}
+                          </p>
+                          <p className="text-[10px] text-muted-foreground">{w.label || '—'} · {w.verified_at}</p>
+                        </div>
+                      ))
+                    )}
+                  </div>
                 </div>
               </div>
             </>

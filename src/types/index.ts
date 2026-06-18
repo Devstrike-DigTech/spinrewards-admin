@@ -62,27 +62,40 @@ export interface AdminMembersListResponse {
 
 // ── Dashboard ────────────────────────────────────────────────────────────────
 
-export interface DashboardKPIs {
+// v3 — financial KPIs are split per currency and NEVER summed
+export interface CurrencyKPIs {
   total_revenue: string
-  total_revenue_change_pct: string
-  net_profit_ggr: string              // total_staked − total_won (GGR)
-  net_profit_ggr_change_pct: string
-  realized_house_edge_pct: string     // (total_staked − total_won) / total_staked × 100
-  player_win_rate_pct: string         // winning_spins / total_spins × 100
+  total_revenue_change_pct: number | null
+  net_profit_ggr: string
+  net_profit_ggr_change_pct: number | null
+  realized_house_edge_pct: string
+  total_won_by_players: string
+}
+
+export interface DashboardKPIs {
+  ngn: CurrencyKPIs
+  usdt: CurrencyKPIs
+  // currency-agnostic
+  player_win_rate_pct: string
   total_spins: number
   winning_spins: number
   active_users: number
   new_users_today: number
 }
 
-export interface DashboardGraphPoint {
-  day?: number       // present when endpoint is called with a specific month
-  month: string
-  year: number
+export interface GraphCurrencyPoint {
   staked: string
   won: string
   ggr: string
   spins: number
+}
+
+export interface DashboardGraphPoint {
+  day?: number       // present when endpoint is called with a specific month
+  month: string
+  year: number
+  ngn: GraphCurrencyPoint
+  usdt: GraphCurrencyPoint
 }
 
 /** @deprecated Use DashboardGraphPoint */
@@ -104,11 +117,16 @@ export interface TopWinner {
   win_value: string
 }
 
+export interface TopWinners {
+  ngn: TopWinner[]
+  usdt: TopWinner[]
+}
+
 export interface AdminDashboard {
   kpis: DashboardKPIs
   graph: DashboardGraphPoint[]
   recent_spins: RecentSpin[]
-  top_winners: TopWinner[]
+  top_winners: TopWinners
 }
 
 // ── Financials ───────────────────────────────────────────────────────────────
@@ -130,50 +148,62 @@ export interface FinancialsGGRPoint {
   won: string
 }
 
+// v3 — every financial section is split per currency (ngn / usdt), never summed
+export interface FinDeposits {
+  total_amount: string
+  total_amount_change_pct: string
+  total_transactions: number
+  average_per_deposit: string
+  net_position: string
+}
+export interface FinWithdrawals {
+  total_amount: string
+  total_amount_change_pct: string
+  pct_of_deposits: string
+  pending_amount: string
+  pending_queue_count: number
+  success_rate_pct: string
+}
+export interface FinSpinsCurrency {
+  count: number
+  total_staked: string
+  avg_stake_per_spin: string
+}
+export interface FinGGR {
+  ggr_amount: string
+  ggr_change_pct: string
+  ggr_margin_pct: string
+  total_staked: string
+  total_won: string
+}
+export interface FinSpinBreakdown {
+  total_ggr: string
+  total_won_by_players: string
+  total_staked: string
+}
+export interface FinCashFlow {
+  deposits: FinancialsCashFlowPoint[]
+  withdrawals: FinancialsCashFlowPoint[]
+}
+
 export interface AdminFinancials {
   period: string
   year: number
   month: string | null
-  deposits: {
-    total_amount: string
-    total_amount_change_pct: string
-    total_transactions: number
-    average_per_deposit: string
-    net_position: string
-  }
-  withdrawals: {
-    total_amount: string
-    total_amount_change_pct: string
-    pct_of_deposits: string
-    pending_amount: string
-    pending_queue_count: number
-    success_rate_pct: string
-  }
+  deposits: { ngn: FinDeposits; usdt: FinDeposits }
+  withdrawals: { ngn: FinWithdrawals; usdt: FinWithdrawals }
   spins: {
     total_spins: number
     win_rate_pct: string
     wins_count: number
     losses_count: number
-    average_stake_per_spin: string
+    ngn: FinSpinsCurrency
+    usdt: FinSpinsCurrency
   }
-  ggr: {
-    ggr_amount: string
-    ggr_change_pct: string
-    ggr_margin_pct: string
-    total_staked: string
-    total_won: string
-    average_stake_per_spin: string
-  }
-  cash_flow: {
-    deposits: FinancialsCashFlowPoint[]
-    withdrawals: FinancialsCashFlowPoint[]
-  }
-  spin_breakdown: {
-    total_ggr: string
-    total_won_by_players: string
-    total_staked: string
-  }
-  ggr_trend: FinancialsGGRPoint[]
+  ggr: { ngn: FinGGR; usdt: FinGGR }
+  cash_flow: { ngn: FinCashFlow; usdt: FinCashFlow }
+  spin_breakdown: { ngn: FinSpinBreakdown; usdt: FinSpinBreakdown }
+  ggr_trend: { ngn: FinancialsGGRPoint[]; usdt: FinancialsGGRPoint[] }
 }
 
 /** @deprecated — kept so mock data file compiles without rewrite */
@@ -275,10 +305,30 @@ export interface AdminUserKYC {
 }
 
 export interface AdminUserBankAccount {
+  id?: string
   bank_name: string
   account_name: string
   account_number_masked: string
+  is_default?: boolean
   verified_at: string
+}
+
+export interface AdminCryptoWallet {
+  id: string
+  network: string
+  address_masked: string
+  label: string
+  is_default: boolean
+  verified_at: string
+}
+
+export interface AdminUserWallet {
+  crypto_coins: string
+  naira_coins: string
+  bonus_coins: string
+  crypto_withdraw_balance: string
+  naira_withdraw_balance: string
+  staked: string
 }
 
 export interface AdminUserDetail {
@@ -287,13 +337,13 @@ export interface AdminUserDetail {
   name: string
   registered_on: string
   registered_via: string
-  last_login: string
-  cash_balance: string
-  coin_balance: string
-  total_balance: string
-  staked: string
+  last_login: string | null
+  wallet: AdminUserWallet
   kyc: AdminUserKYC
   risk: string
+  bank_accounts: AdminUserBankAccount[]
+  crypto_wallets: AdminCryptoWallet[]
+  /** @deprecated legacy single account — use bank_accounts[] */
   bank_account: AdminUserBankAccount | null
   is_active: boolean
   is_staff: boolean
@@ -335,20 +385,34 @@ export type WithdrawalStatus =
   | 'rejected'
   | 'cancelled'
 
-export interface WithdrawalsOverview {
+export interface WithdrawalCurrencyOverview {
   total_pending: string
   total_paid: string
   queued: number
 }
 
+export interface WithdrawalsOverview {
+  ngn: WithdrawalCurrencyOverview
+  usdt: WithdrawalCurrencyOverview
+  queued_total: number
+}
+
+export type WithdrawalRail = 'bank' | 'crypto'
+
 export interface AdminWithdrawal {
   id: string
   name: string
   user_id: string
+  rail: WithdrawalRail
+  currency: 'NGN' | 'USDT'
   amount: string
   net_amount: string
-  bank: string
+  destination: string
   account_masked: string
+  wallet_address: string
+  network: string
+  tx_hash: string
+  bank: string
   type: string
   risk: string
   status: WithdrawalStatus

@@ -22,7 +22,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip'
-import { formatCurrency } from '@/lib/utils'
+import { formatMoney } from '@/lib/utils'
 import type { AdminFinancials } from '@/types'
 
 // ── constants ─────────────────────────────────────────────────────────────────
@@ -57,10 +57,6 @@ const TIP = {
 } as const
 
 // ── helpers ───────────────────────────────────────────────────────────────────
-
-function fmt(v: string | number) {
-  return formatCurrency(typeof v === 'string' ? parseFloat(v) : v)
-}
 
 function InfoTip({ text }: { text: string }) {
   return (
@@ -140,6 +136,9 @@ function GroupedCard({
 export function FinancialsPage() {
   const [filterMonth, setFilterMonth] = useState(MONTHS[new Date().getMonth()])
   const [filterYear, setFilterYear] = useState('2026')
+  const [currency, setCurrency] = useState<'NGN' | 'USDT'>('NGN')
+  const cur = currency === 'USDT' ? 'usdt' : 'ngn'
+  const sym = currency === 'USDT' ? '$' : '₦'
 
   const apiParams = useMemo(() => {
     const params: { year: string; month?: string } = { year: filterYear }
@@ -152,13 +151,17 @@ export function FinancialsPage() {
     queryFn: () => financialsApi.get(apiParams),
   })
 
-  const dep        = data?.deposits
-  const wit        = data?.withdrawals
-  const spins      = data?.spins
-  const ggr        = data?.ggr
-  const flow       = data?.cash_flow ?? { deposits: [], withdrawals: [] }
-  const spinBreak  = data?.spin_breakdown
-  const ggrPoints  = data?.ggr_trend ?? []
+  const dep        = data?.deposits?.[cur]
+  const wit        = data?.withdrawals?.[cur]
+  const spinsTop   = data?.spins
+  const spinsCur   = data?.spins?.[cur]
+  const ggr        = data?.ggr?.[cur]
+  const flow       = data?.cash_flow?.[cur] ?? { deposits: [], withdrawals: [] }
+  const spinBreak  = data?.spin_breakdown?.[cur]
+  const ggrPoints  = data?.ggr_trend?.[cur] ?? []
+
+  // Currency-aware money formatter for this page
+  const fmtMoney = (v: string | number) => formatMoney(typeof v === 'string' ? v : String(v), currency)
 
   const isMonthView = filterMonth !== 'Month'
 
@@ -210,6 +213,18 @@ export function FinancialsPage() {
       <div className="flex items-center justify-between">
         <h2 className="text-base font-semibold text-foreground">Financials</h2>
         <div className="flex items-center gap-2">
+          <div className="flex overflow-hidden rounded-md border border-[#1e2a4a]">
+            {(['NGN', 'USDT'] as const).map((c) => (
+              <button
+                key={c}
+                onClick={() => setCurrency(c)}
+                className="px-3 py-1 text-xs font-semibold transition-colors"
+                style={c === currency ? { background: '#C9961A', color: '#07090F' } : { color: '#94a3b8' }}
+              >
+                {c === 'NGN' ? '₦ NGN' : '$ USDT'}
+              </button>
+            ))}
+          </div>
           <span className="text-xs text-muted-foreground">Filter by:</span>
           <select
             value={filterMonth}
@@ -236,7 +251,7 @@ export function FinancialsPage() {
         <GroupedCard
           title="Deposits"
           tooltip={TIP.deposits}
-          primary={dep ? fmt(dep.total_amount) : '—'}
+          primary={dep ? fmtMoney(dep.total_amount) : '—'}
           primarySub={
             dep && dep.total_amount_change_pct !== '0' && (
               <span className="text-xs text-emerald-400">
@@ -246,8 +261,8 @@ export function FinancialsPage() {
           }
           stats={[
             { label: 'Transactions', value: dep ? dep.total_transactions.toLocaleString() : '—' },
-            { label: 'Avg / Txn',    value: dep ? fmt(dep.average_per_deposit) : '—' },
-            { label: 'Net Position', value: dep ? fmt(dep.net_position) : '—', color: '#34d399' },
+            { label: 'Avg / Txn',    value: dep ? fmtMoney(dep.average_per_deposit) : '—' },
+            { label: 'Net Position', value: dep ? fmtMoney(dep.net_position) : '—', color: '#34d399' },
           ]}
           isLoading={isLoading}
         />
@@ -256,7 +271,7 @@ export function FinancialsPage() {
         <GroupedCard
           title="Withdrawals"
           tooltip={TIP.withdrawals}
-          primary={wit ? fmt(wit.total_amount) : '—'}
+          primary={wit ? fmtMoney(wit.total_amount) : '—'}
           primarySub={
             wit && wit.pct_of_deposits !== '0.0' && (
               <span className="text-xs text-orange-400">
@@ -265,29 +280,29 @@ export function FinancialsPage() {
             )
           }
           stats={[
-            { label: 'Pending ₦',    value: wit ? fmt(wit.pending_amount) : '—', color: '#fb923c' },
+            { label: 'Pending',      value: wit ? fmtMoney(wit.pending_amount) : '—', color: '#fb923c' },
             { label: 'Queue',        value: wit ? String(wit.pending_queue_count) : '—', color: '#fb923c' },
             { label: 'Success Rate', value: wit ? `${wit.success_rate_pct}%` : '—', color: '#34d399' },
           ]}
           isLoading={isLoading}
         />
 
-        {/* Spins */}
+        {/* Spins (counts are currency-agnostic; stake totals are per-currency) */}
         <GroupedCard
           title="Spins"
           tooltip={TIP.spins}
-          primary={spins ? spins.total_spins.toLocaleString() : '—'}
+          primary={spinsTop ? spinsTop.total_spins.toLocaleString() : '—'}
           primarySub={
-            spins && (
+            spinsTop && (
               <span className="text-xs text-muted-foreground">
-                Win rate: {spins.win_rate_pct}%
+                Win rate: {spinsTop.win_rate_pct}%
               </span>
             )
           }
           stats={[
-            { label: 'Wins',      value: spins ? spins.wins_count.toLocaleString() : '—',   color: '#34d399' },
-            { label: 'Losses',    value: spins ? spins.losses_count.toLocaleString() : '—', color: '#f87171' },
-            { label: 'Avg Stake', value: spins ? fmt(spins.average_stake_per_spin) : '—' },
+            { label: 'Wins',      value: spinsTop ? spinsTop.wins_count.toLocaleString() : '—',   color: '#34d399' },
+            { label: 'Losses',    value: spinsTop ? spinsTop.losses_count.toLocaleString() : '—', color: '#f87171' },
+            { label: `Avg Stake (${sym})`, value: spinsCur ? fmtMoney(spinsCur.avg_stake_per_spin) : '—' },
           ]}
           isLoading={isLoading}
         />
@@ -296,7 +311,7 @@ export function FinancialsPage() {
         <GroupedCard
           title="Gross Gaming Revenue"
           tooltip={TIP.ggr}
-          primary={ggr ? fmt(ggr.ggr_amount) : '—'}
+          primary={ggr ? fmtMoney(ggr.ggr_amount) : '—'}
           primarySub={
             ggr && (
               <span className="text-xs" style={{ color: '#C9961A' }}>
@@ -305,9 +320,9 @@ export function FinancialsPage() {
             )
           }
           stats={[
-            { label: 'Total Staked', value: ggr ? fmt(ggr.total_staked) : '—' },
-            { label: 'Total Won',    value: ggr ? fmt(ggr.total_won) : '—', color: '#f87171' },
-            { label: 'Avg Stake',    value: ggr ? fmt(ggr.average_stake_per_spin) : '—' },
+            { label: 'Total Staked', value: ggr ? fmtMoney(ggr.total_staked) : '—' },
+            { label: 'Total Won',    value: ggr ? fmtMoney(ggr.total_won) : '—', color: '#f87171' },
+            { label: 'Spin Count',   value: spinsCur ? spinsCur.count.toLocaleString() : '—' },
           ]}
           isLoading={isLoading}
         />
@@ -358,13 +373,13 @@ export function FinancialsPage() {
                 <YAxis
                   {...axisProps}
                   tickFormatter={(v: number) =>
-                    v >= 1_000_000 ? `₦${(v / 1_000_000).toFixed(1)}M` : `₦${(v / 1000).toFixed(0)}k`
+                    v >= 1_000_000 ? `${sym}${(v / 1_000_000).toFixed(1)}M` : `${sym}${(v / 1000).toFixed(0)}k`
                   }
                 />
                 <Tooltip
                   contentStyle={CHART_STYLE}
                   formatter={(v: number, name: string) => [
-                    formatCurrency(v),
+                    fmtMoney(v),
                     name === 'deposits' ? 'Deposits' : 'Withdrawals',
                   ]}
                 />
@@ -410,7 +425,7 @@ export function FinancialsPage() {
                     </Pie>
                     <Tooltip
                       contentStyle={CHART_STYLE}
-                      formatter={(v: number, name: string) => [formatCurrency(v), name]}
+                      formatter={(v: number, name: string) => [fmtMoney(v), name]}
                     />
                   </PieChart>
                 </ResponsiveContainer>
@@ -420,7 +435,7 @@ export function FinancialsPage() {
                   <div className="text-center">
                     <p className="text-[10px] text-muted-foreground">GGR</p>
                     <p className="text-lg font-bold" style={{ color: '#C9961A' }}>
-                      {ggr ? fmt(ggr.ggr_amount) : '—'}
+                      {ggr ? fmtMoney(ggr.ggr_amount) : '—'}
                     </p>
                   </div>
                 </div>
@@ -437,7 +452,7 @@ export function FinancialsPage() {
                           <span className="text-xs text-muted-foreground">{item.name}</span>
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className="text-xs font-semibold text-foreground">{formatCurrency(item.value)}</span>
+                          <span className="text-xs font-semibold text-foreground">{fmtMoney(item.value)}</span>
                           <span className="text-[10px] text-muted-foreground">{pct}%</span>
                         </div>
                       </div>
@@ -450,7 +465,7 @@ export function FinancialsPage() {
                         <span className="text-xs text-muted-foreground">Total Staked</span>
                       </div>
                       <span className="text-xs font-semibold text-foreground">
-                        {fmt(spinBreak.total_staked)}
+                        {fmtMoney(spinBreak.total_staked)}
                       </span>
                     </div>
                   )}
@@ -494,7 +509,7 @@ export function FinancialsPage() {
                   />
                   <Tooltip
                     contentStyle={CHART_STYLE}
-                    formatter={(v: number) => [formatCurrency(v), 'GGR']}
+                    formatter={(v: number) => [fmtMoney(v), 'GGR']}
                   />
                   <Area
                     type="monotone"

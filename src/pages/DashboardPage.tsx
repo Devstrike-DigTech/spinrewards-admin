@@ -22,7 +22,7 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip'
 import { formatCurrency } from '@/lib/utils'
-import type { AdminDashboard, DashboardGraphPoint, RecentSpin } from '@/types'
+import type { AdminDashboard, DashboardGraphPoint, RecentSpin, TopWinner } from '@/types'
 
 // ── helpers ───────────────────────────────────────────────────────────────────
 
@@ -111,9 +111,9 @@ const MONTH_INDEX: Record<string, number> = {
 function buildDailyData(monthName: string, year: number, graph: DashboardGraphPoint[]) {
   const monthIdx = MONTH_INDEX[monthName] ?? 0
   const monthData = graph.find(p => p.month === monthName && p.year === year)
-  const monthlyStaked = monthData ? parseFloat(monthData.staked) : 600000
-  const monthlyWon   = monthData ? parseFloat(monthData.won)    : 420000
-  const monthlyGgr   = monthData ? parseFloat(monthData.ggr)    : 180000
+  const monthlyStaked = monthData ? parseFloat(monthData.ngn.staked) : 600000
+  const monthlyWon   = monthData ? parseFloat(monthData.ngn.won)    : 420000
+  const monthlyGgr   = monthData ? parseFloat(monthData.ngn.ggr)    : 180000
   const daysInMonth  = new Date(year, monthIdx + 1, 0).getDate()
 
   return Array.from({ length: daysInMonth }, (_, i) => {
@@ -160,9 +160,14 @@ export function DashboardPage() {
   })
 
   const kpis = data?.kpis
+  const ngn = kpis?.ngn
+  const usdt = kpis?.usdt
   const graph = data?.graph ?? []
   const spins = data?.recent_spins ?? []
-  const winners = data?.top_winners ?? []
+  const winnersNgn = data?.top_winners?.ngn ?? []
+  const winnersUsdt = data?.top_winners?.usdt ?? []
+
+  const pct = (v: number | null | undefined) => (v != null ? String(v) : undefined)
 
   const chartData = useMemo(() => {
     if (filterMonth === 'Month') {
@@ -171,9 +176,9 @@ export function DashboardPage() {
         const p = graph.find((g) => g.month === month && g.year === parseInt(filterYear))
         return {
           label: month,
-          staked: p ? Math.round(parseFloat(p.staked) / 1000) : 0,
-          won:    p ? Math.round(parseFloat(p.won)    / 1000) : 0,
-          ggr:    p ? Math.round(parseFloat(p.ggr)    / 1000) : 0,
+          staked: p ? Math.round(parseFloat(p.ngn.staked) / 1000) : 0,
+          won:    p ? Math.round(parseFloat(p.ngn.won)    / 1000) : 0,
+          ggr:    p ? Math.round(parseFloat(p.ngn.ggr)    / 1000) : 0,
         }
       })
     }
@@ -188,9 +193,9 @@ export function DashboardPage() {
         const p = graph.find((g) => g.day === day)
         return {
           label: String(day),
-          staked: p ? Math.round(parseFloat(p.staked) / 1000) : 0,
-          won:    p ? Math.round(parseFloat(p.won)    / 1000) : 0,
-          ggr:    p ? Math.round(parseFloat(p.ggr)    / 1000) : 0,
+          staked: p ? Math.round(parseFloat(p.ngn.staked) / 1000) : 0,
+          won:    p ? Math.round(parseFloat(p.ngn.won)    / 1000) : 0,
+          ggr:    p ? Math.round(parseFloat(p.ngn.ggr)    / 1000) : 0,
         }
       })
     }
@@ -227,27 +232,28 @@ export function DashboardPage() {
         </div>
       </div>
 
-      {/* Stat cards — 5 across on xl, 2-col on md, 1-col on mobile */}
+      {/* Naira KPIs */}
+      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Naira (₦)</p>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
         <StatCard
           title="Total Revenue"
           tooltip={TOOLTIPS.totalRevenue}
-          value={kpis ? `₦ ${parseFloat(kpis.total_revenue).toLocaleString()}` : '—'}
-          change={kpis?.total_revenue_change_pct !== '0' ? kpis?.total_revenue_change_pct : undefined}
+          value={ngn ? `₦ ${parseFloat(ngn.total_revenue).toLocaleString()}` : '—'}
+          change={pct(ngn?.total_revenue_change_pct)}
           isLoading={isLoading}
         />
         <StatCard
           title="Net Profit (GGR)"
           tooltip={TOOLTIPS.netProfit}
-          value={kpis ? `₦ ${parseFloat(kpis.net_profit_ggr).toLocaleString()}` : '—'}
-          change={kpis?.net_profit_ggr_change_pct !== '0' ? kpis?.net_profit_ggr_change_pct : undefined}
+          value={ngn ? `₦ ${parseFloat(ngn.net_profit_ggr).toLocaleString()}` : '—'}
+          change={pct(ngn?.net_profit_ggr_change_pct)}
           sub={kpis ? `${kpis.total_spins.toLocaleString()} total spins` : undefined}
           isLoading={isLoading}
         />
         <StatCard
           title="Realized House Edge"
           tooltip={TOOLTIPS.houseEdge}
-          value={kpis ? `${kpis.realized_house_edge_pct}%` : '—'}
+          value={ngn ? `${ngn.realized_house_edge_pct}%` : '—'}
           isLoading={isLoading}
         />
         <StatCard
@@ -263,6 +269,31 @@ export function DashboardPage() {
           tooltip={TOOLTIPS.activeUsers}
           value={kpis ? kpis.active_users.toLocaleString() : '—'}
           sub={kpis ? `${kpis.new_users_today} new today` : undefined}
+          isLoading={isLoading}
+        />
+      </div>
+
+      {/* USDT KPIs — separate, never summed with NGN */}
+      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">USDT ($)</p>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <StatCard
+          title="Total Revenue"
+          tooltip={TOOLTIPS.totalRevenue}
+          value={usdt ? `$ ${parseFloat(usdt.total_revenue).toLocaleString()}` : '—'}
+          change={pct(usdt?.total_revenue_change_pct)}
+          isLoading={isLoading}
+        />
+        <StatCard
+          title="Net Profit (GGR)"
+          tooltip={TOOLTIPS.netProfit}
+          value={usdt ? `$ ${parseFloat(usdt.net_profit_ggr).toLocaleString()}` : '—'}
+          change={pct(usdt?.net_profit_ggr_change_pct)}
+          isLoading={isLoading}
+        />
+        <StatCard
+          title="Realized House Edge"
+          tooltip={TOOLTIPS.houseEdge}
+          value={usdt ? `${usdt.realized_house_edge_pct}%` : '—'}
           isLoading={isLoading}
         />
       </div>
@@ -350,9 +381,9 @@ export function DashboardPage() {
                 <thead>
                   <tr className="border-b border-[#1e2a4a]">
                     <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground">User</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground">Stake (₦)</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground">Stake</th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground">Result</th>
-                    <th className="px-4 py-3 text-right text-xs font-medium text-muted-foreground">Win Value (₦)</th>
+                    <th className="px-4 py-3 text-right text-xs font-medium text-muted-foreground">Win Value</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -383,35 +414,32 @@ export function DashboardPage() {
                 {[1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-10 w-full" />)}
               </div>
             ) : (
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-[#1e2a4a]">
-                    <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground">User</th>
-                    <th className="px-4 py-3 text-right text-xs font-medium text-muted-foreground">Win Value (₦)</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {winners.map((w, i) => (
-                    <tr key={i} className="border-b border-[#1e2a4a]/40 last:border-0 hover:bg-white/[0.02]">
-                      <td className="px-4 py-3 text-sm text-foreground">{w.user}</td>
-                      <td className="px-4 py-3 text-right text-sm text-foreground">
-                        {parseFloat(w.win_value).toLocaleString()}
-                      </td>
-                    </tr>
-                  ))}
-                  {winners.length === 0 && (
-                    <tr>
-                      <td colSpan={2} className="px-4 py-8 text-center text-xs text-muted-foreground">
-                        No winners yet
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
+              <div>
+                <WinnersList title="₦ Naira" symbol="₦" list={winnersNgn} />
+                <WinnersList title="$ USDT" symbol="$" list={winnersUsdt} />
+              </div>
             )}
           </CardContent>
         </Card>
       </div>
+    </div>
+  )
+}
+
+function WinnersList({ title, symbol, list }: { title: string; symbol: string; list: TopWinner[] }) {
+  return (
+    <div className="border-b border-[#1e2a4a]/40 last:border-0">
+      <p className="px-4 pb-1 pt-3 text-xs font-semibold text-muted-foreground">{title}</p>
+      {list.length === 0 ? (
+        <p className="px-4 pb-3 text-xs text-muted-foreground">No winners yet</p>
+      ) : (
+        list.map((w, i) => (
+          <div key={i} className="flex items-center justify-between px-4 py-2 hover:bg-white/[0.02]">
+            <span className="text-sm text-foreground">{w.user}</span>
+            <span className="text-sm text-foreground">{symbol} {parseFloat(w.win_value).toLocaleString()}</span>
+          </div>
+        ))
+      )}
     </div>
   )
 }

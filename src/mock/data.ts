@@ -18,15 +18,26 @@ import type {
 
 // ── Dashboard ────────────────────────────────────────────────────────────────
 
+const gp = (staked: string, won: string, ggr: string, spins: number) => ({ staked, won, ggr, spins })
+
 export const MOCK_DASHBOARD: AdminDashboard = {
   kpis: {
-    total_revenue: '2400500.00',
-    total_revenue_change_pct: '2.0',
-    net_profit_ggr: '1300000.00',
-    net_profit_ggr_change_pct: '1.5',
-    // (500,000 staked - 350,000 won) / 500,000 * 100 = 30%
-    realized_house_edge_pct: '30.0',
-    // 450 wins / 2,050 total spins * 100 = 21.95%
+    ngn: {
+      total_revenue: '2400500.00',
+      total_revenue_change_pct: 2.0,
+      net_profit_ggr: '1300000.00',
+      net_profit_ggr_change_pct: 1.5,
+      realized_house_edge_pct: '30.0',
+      total_won_by_players: '1100500.00',
+    },
+    usdt: {
+      total_revenue: '1600.00',
+      total_revenue_change_pct: null,
+      net_profit_ggr: '410.00',
+      net_profit_ggr_change_pct: null,
+      realized_house_edge_pct: '25.6',
+      total_won_by_players: '1190.00',
+    },
     player_win_rate_pct: '21.95',
     total_spins: 2050,
     winning_spins: 450,
@@ -34,18 +45,18 @@ export const MOCK_DASHBOARD: AdminDashboard = {
     new_users_today: 52,
   },
   graph: [
-    { month: 'Jan', year: 2026, staked: '600000.00', won: '420000.00', ggr: '180000.00', spins: 580 },
-    { month: 'Feb', year: 2026, staked: '730000.00', won: '510000.00', ggr: '220000.00', spins: 710 },
-    { month: 'Mar', year: 2026, staked: '1030000.00', won: '720000.00', ggr: '310000.00', spins: 990 },
-    { month: 'Apr', year: 2026, staked: '900000.00', won: '630000.00', ggr: '270000.00', spins: 870 },
-    { month: 'May', year: 2026, staked: '1165000.00', won: '815000.00', ggr: '350000.00', spins: 1120 },
-    { month: 'Jun', year: 2026, staked: '1330000.00', won: '930000.00', ggr: '400000.00', spins: 1280 },
-    { month: 'Jul', year: 2026, staked: '1600000.00', won: '1120000.00', ggr: '480000.00', spins: 1540 },
-    { month: 'Aug', year: 2026, staked: '1400000.00', won: '980000.00', ggr: '420000.00', spins: 1350 },
-    { month: 'Sep', year: 2026, staked: '1700000.00', won: '1190000.00', ggr: '510000.00', spins: 1630 },
-    { month: 'Oct', year: 2026, staked: '1865000.00', won: '1305000.00', ggr: '560000.00', spins: 1790 },
-    { month: 'Nov', year: 2026, staked: '1765000.00', won: '1235000.00', ggr: '530000.00', spins: 1700 },
-    { month: 'Dec', year: 2026, staked: '2065000.00', won: '1445000.00', ggr: '620000.00', spins: 1980 },
+    { month: 'Jan', year: 2026, ngn: gp('600000.00', '420000.00', '180000.00', 580), usdt: gp('400', '320', '80', 25) },
+    { month: 'Feb', year: 2026, ngn: gp('730000.00', '510000.00', '220000.00', 710), usdt: gp('480', '380', '100', 30) },
+    { month: 'Mar', year: 2026, ngn: gp('1030000.00', '720000.00', '310000.00', 990), usdt: gp('700', '560', '140', 44) },
+    { month: 'Apr', year: 2026, ngn: gp('900000.00', '630000.00', '270000.00', 870), usdt: gp('600', '480', '120', 38) },
+    { month: 'May', year: 2026, ngn: gp('1165000.00', '815000.00', '350000.00', 1120), usdt: gp('780', '620', '160', 49) },
+    { month: 'Jun', year: 2026, ngn: gp('1330000.00', '930000.00', '400000.00', 1280), usdt: gp('900', '720', '180', 56) },
+    { month: 'Jul', year: 2026, ngn: gp('1600000.00', '1120000.00', '480000.00', 1540), usdt: gp('1080', '860', '220', 67) },
+    { month: 'Aug', year: 2026, ngn: gp('1400000.00', '980000.00', '420000.00', 1350), usdt: gp('940', '750', '190', 59) },
+    { month: 'Sep', year: 2026, ngn: gp('1700000.00', '1190000.00', '510000.00', 1630), usdt: gp('1140', '910', '230', 71) },
+    { month: 'Oct', year: 2026, ngn: gp('1865000.00', '1305000.00', '560000.00', 1790), usdt: gp('1250', '1000', '250', 78) },
+    { month: 'Nov', year: 2026, ngn: gp('1765000.00', '1235000.00', '530000.00', 1700), usdt: gp('1180', '945', '235', 73) },
+    { month: 'Dec', year: 2026, ngn: gp('2065000.00', '1445000.00', '620000.00', 1980), usdt: gp('1380', '1100', '280', 86) },
   ],
   recent_spins: [
     { id: 'sp1', user: 'Alex Ninth', stake: '500.00', result: '2x', multiplier: '2.0000', win_value: '1000.00', outcome: 'win', date: 'May 4, 2026' },
@@ -53,12 +64,16 @@ export const MOCK_DASHBOARD: AdminDashboard = {
     { id: 'sp3', user: 'Chinedu Jacks', stake: '10000.00', result: '5x', multiplier: '5.0000', win_value: '50000.00', outcome: 'win', date: 'May 4, 2026' },
     { id: 'sp4', user: 'Chinedu Jacks', stake: '10000.00', result: '5x', multiplier: '5.0000', win_value: '50000.00', outcome: 'win', date: 'May 4, 2026' },
   ],
-  top_winners: [
-    { user: 'Chinedu Jacks', win_value: '50000.00' },
-    { user: 'Alex Ninth', win_value: '1000.00' },
-    { user: 'Alex Ninth', win_value: '1000.00' },
-    { user: 'Alex Ninth', win_value: '1000.00' },
-  ],
+  top_winners: {
+    ngn: [
+      { user: 'Chinedu Jacks', win_value: '50000.00' },
+      { user: 'Alex Ninth', win_value: '1000.00' },
+    ],
+    usdt: [
+      { user: 'Linda P.', win_value: '850.00' },
+      { user: 'James O.', win_value: '620.00' },
+    ],
+  },
 }
 
 // ── Financials ────────────────────────────────────────────────────────────────
@@ -68,36 +83,27 @@ export const MOCK_FINANCIALS: AdminFinancials = {
   year: 2026,
   month: 'May',
   deposits: {
-    total_amount: '2400500.00',
-    total_amount_change_pct: '2.0',
-    total_transactions: 1240,
-    average_per_deposit: '1936.00',
-    net_position: '1100500.00',
+    ngn: { total_amount: '2400500.00', total_amount_change_pct: '2.0', total_transactions: 1240, average_per_deposit: '1936.00', net_position: '1100500.00' },
+    usdt: { total_amount: '0', total_amount_change_pct: '0', total_transactions: 0, average_per_deposit: '0', net_position: '0' },
   },
   withdrawals: {
-    total_amount: '1300000.00',
-    total_amount_change_pct: '2.0',
-    pct_of_deposits: '54.2',
-    pending_amount: '350000.00',
-    pending_queue_count: 12,
-    success_rate_pct: '86.2',
+    ngn: { total_amount: '1300000.00', total_amount_change_pct: '2.0', pct_of_deposits: '54.2', pending_amount: '350000.00', pending_queue_count: 12, success_rate_pct: '86.2' },
+    usdt: { total_amount: '0', total_amount_change_pct: '0', pct_of_deposits: '0', pending_amount: '0', pending_queue_count: 0, success_rate_pct: '0' },
   },
   spins: {
     total_spins: 2050,
     win_rate_pct: '21.95',
     wins_count: 450,
     losses_count: 800,
-    average_stake_per_spin: '243.90',
+    ngn: { count: 1800, total_staked: '438000.00', avg_stake_per_spin: '243.90' },
+    usdt: { count: 0, total_staked: '0', avg_stake_per_spin: '0' },
   },
   ggr: {
-    ggr_amount: '150000.00',
-    ggr_change_pct: '1.5',
-    ggr_margin_pct: '30.0',
-    total_staked: '500000.00',
-    total_won: '350000.00',
-    average_stake_per_spin: '243.90',
+    ngn: { ggr_amount: '150000.00', ggr_change_pct: '1.5', ggr_margin_pct: '30.0', total_staked: '500000.00', total_won: '350000.00' },
+    usdt: { ggr_amount: '0', ggr_change_pct: '0', ggr_margin_pct: '0', total_staked: '0', total_won: '0' },
   },
   cash_flow: {
+    ngn: {
     deposits: [
       { month: 'Jan', year: 2026, count: 120, amount: '1800000.00' },
       { month: 'Feb', year: 2026, count: 98,  amount: '1500000.00' },
@@ -126,13 +132,15 @@ export const MOCK_FINANCIALS: AdminFinancials = {
       { month: 'Nov', year: 2026, count: 45, amount: '830000.00' },
       { month: 'Dec', year: 2026, count: 52, amount: '970000.00' },
     ],
+    },
+    usdt: { deposits: [], withdrawals: [] },
   },
   spin_breakdown: {
-    total_ggr: '150000.00',
-    total_won_by_players: '350000.00',
-    total_staked: '500000.00',
+    ngn: { total_ggr: '150000.00', total_won_by_players: '350000.00', total_staked: '500000.00' },
+    usdt: { total_ggr: '0', total_won_by_players: '0', total_staked: '0' },
   },
-  ggr_trend: [
+  ggr_trend: {
+    ngn: [
     { month: 'Jan', year: 2026, ggr: '112500.00', staked: '375000.00', won: '262500.00' },
     { month: 'Feb', year: 2026, ggr: '93750.00',  staked: '312500.00', won: '218750.00' },
     { month: 'Mar', year: 2026, ggr: '131250.00', staked: '437500.00', won: '306250.00' },
@@ -145,7 +153,9 @@ export const MOCK_FINANCIALS: AdminFinancials = {
     { month: 'Oct', year: 2026, ggr: '175000.00', staked: '583333.00', won: '408333.00' },
     { month: 'Nov', year: 2026, ggr: '162500.00', staked: '541667.00', won: '379167.00' },
     { month: 'Dec', year: 2026, ggr: '193750.00', staked: '645833.00', won: '452083.00' },
-  ],
+    ],
+    usdt: [],
+  },
 }
 
 // ── RTP Wheels ────────────────────────────────────────────────────────────────
@@ -232,10 +242,14 @@ export const MOCK_USER_DETAIL: AdminUserDetail = {
   registered_on: 'Nov 12, 2025',
   registered_via: 'Telegram',
   last_login: 'May 6, 2026 20:40',
-  cash_balance: '45000.00',
-  coin_balance: '1250.00',
-  total_balance: '46250.00',
-  staked: '89500',
+  wallet: {
+    crypto_coins: '12.500000',
+    naira_coins: '1250.00',
+    bonus_coins: '300.00',
+    crypto_withdraw_balance: '0.000000',
+    naira_withdraw_balance: '45000.00',
+    staked: '89500.00',
+  },
   kyc: {
     overall_status: 'approved',
     display_status: 'Done',
@@ -245,6 +259,10 @@ export const MOCK_USER_DETAIL: AdminUserDetail = {
     submitted_at: 'Nov 15, 2025',
   },
   risk: 'Low',
+  bank_accounts: [
+    { id: 'ba1', bank_name: 'Zenith Bank', account_name: 'CHIDI OKONKWO', account_number_masked: '****6789', is_default: true, verified_at: 'Nov 16, 2025' },
+  ],
+  crypto_wallets: [],
   bank_account: {
     bank_name: 'Zenith Bank',
     account_name: 'CHIDI OKONKWO',
@@ -328,7 +346,7 @@ export const MOCK_KYC: AdminKYCQueueItem[] = [
 
 // ── Withdrawals ───────────────────────────────────────────────────────────────
 
-export const MOCK_WITHDRAWALS: AdminWithdrawal[] = [
+const _MOCK_W: Array<Omit<AdminWithdrawal, 'rail' | 'currency' | 'destination' | 'wallet_address' | 'network' | 'tx_hash'>> = [
   { id: 'wd1', name: 'Chidi Okonkwo', user_id: '41df4f5d-0001-4fc7-b4c5-bd51cde8c040', amount: '15000.00', net_amount: '15000.00', bank: 'Zenith', account_masked: '****6789', type: 'Small', risk: 'Low', status: 'pending', status_display: 'Pending Processing', requires_review: true, forced_manual_review: false, reference: 'wd_abc001', requested_at: 'May 6, 2026 09:00', completed_at: null, failure_reason: '' },
   { id: 'wd2', name: 'Emeka Eze', user_id: '41df4f5d-0003-4fc7-b4c5-bd51cde8c040', amount: '50000.00', net_amount: '50000.00', bank: 'GTBank', account_masked: '****8901', type: 'Medium', risk: 'Medium', status: 'pending', status_display: 'Pending Processing', requires_review: false, forced_manual_review: false, reference: 'wd_abc002', requested_at: 'May 6, 2026 08:30', completed_at: null, failure_reason: '' },
   { id: 'wd3', name: 'Sola Adesanya', user_id: '41df4f5d-0006-4fc7-b4c5-bd51cde8c040', amount: '25000.00', net_amount: '25000.00', bank: 'Stanbic IBTC', account_masked: '****9012', type: 'Small', risk: 'Low', status: 'processing', status_display: 'Processing', requires_review: false, forced_manual_review: false, reference: 'wd_abc003', requested_at: 'May 5, 2026 20:00', completed_at: null, failure_reason: '' },
@@ -337,6 +355,16 @@ export const MOCK_WITHDRAWALS: AdminWithdrawal[] = [
   { id: 'wd6', name: 'Ngozi Adeyemi', user_id: '41df4f5d-0002-4fc7-b4c5-bd51cde8c040', amount: '8000.00', net_amount: '8000.00', bank: 'GTBank', account_masked: '****6789', type: 'Small', risk: 'Low', status: 'rejected', status_display: 'Rejected', requires_review: false, forced_manual_review: false, reference: 'wd_abc006', requested_at: 'Apr 28, 2026 10:00', completed_at: null, failure_reason: 'Account name mismatch — KYC name does not match bank account holder.' },
   { id: 'wd7', name: 'Ifeanyi Obi', user_id: '41df4f5d-0005-4fc7-b4c5-bd51cde8c040', amount: '22000.00', net_amount: '22000.00', bank: 'Access Bank', account_masked: '****3344', type: 'Small', risk: 'High', status: 'rejected', status_display: 'Rejected', requires_review: false, forced_manual_review: false, reference: 'wd_abc007', requested_at: 'Apr 30, 2026 11:15', completed_at: null, failure_reason: 'Suspicious activity detected — multiple withdrawal attempts within 24 hours.' },
 ]
+
+export const MOCK_WITHDRAWALS: AdminWithdrawal[] = _MOCK_W.map((w) => ({
+  rail: 'bank' as const,
+  currency: 'NGN' as const,
+  destination: '',
+  wallet_address: '',
+  network: '',
+  tx_hash: '',
+  ...w,
+}))
 
 // ── Fraud ─────────────────────────────────────────────────────────────────────
 
