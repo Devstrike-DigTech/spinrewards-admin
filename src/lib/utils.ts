@@ -12,6 +12,21 @@ export function formatCurrency(amount: string | number) {
   })}`
 }
 
+/** Format USDT — up to 6dp, trailing zeros trimmed, $ prefix. */
+export function formatUsdt(amount: string | number) {
+  const n = parseFloat(String(amount))
+  if (isNaN(n)) return '$0'
+  const trimmed = n.toFixed(6).replace(/\.?0+$/, '')
+  const [whole, dec] = trimmed.split('.')
+  const withCommas = parseInt(whole, 10).toLocaleString('en-US')
+  return `$${dec ? `${withCommas}.${dec}` : withCommas}`
+}
+
+/** Currency-aware money formatter — NGN → ₦, USDT → $. */
+export function formatMoney(amount: string | number, currency: 'NGN' | 'USDT' | string) {
+  return currency === 'USDT' ? formatUsdt(amount) : formatCurrency(amount)
+}
+
 export function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString('en-NG', {
     day: 'numeric',

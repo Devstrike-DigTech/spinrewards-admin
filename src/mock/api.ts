@@ -210,7 +210,11 @@ export const mockWithdrawals = {
       : MOCK_WITHDRAWALS
     const start = (page - 1) * PAGE_SIZE
     return delay({
-      overview: { total_pending: '350000.00', total_paid: '1125000.00', queued: 3 },
+      overview: {
+        ngn: { total_pending: '350000.00', total_paid: '1125000.00', queued: 3 },
+        usdt: { total_pending: '0', total_paid: '0', queued: 0 },
+        queued_total: 3,
+      },
       count: filtered.length,
       next: filtered.length > page * PAGE_SIZE ? `?page=${page + 1}` : null,
       previous: page > 1 ? `?page=${page - 1}` : null,

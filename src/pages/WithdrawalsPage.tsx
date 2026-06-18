@@ -4,11 +4,17 @@ import { useNavigate } from 'react-router-dom'
 import { Search, X, Download } from 'lucide-react'
 import { toast } from 'sonner'
 import { withdrawalsApi } from '@/api/index'
-import type { AdminWithdrawal, WithdrawalsListResponse } from '@/types'
+import type { AdminWithdrawal, WithdrawalsListResponse, WithdrawalCurrencyOverview } from '@/types'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Badge } from '@/components/ui/badge'
 import { Pagination } from '@/components/Pagination'
-import { formatCurrency } from '@/lib/utils'
+import { formatCurrency, formatUsdt, formatMoney } from '@/lib/utils'
+
+const shortAddr = (a: string) => (a ? `${a.slice(0, 6)}…${a.slice(-4)}` : '')
+const destLine = (wd: AdminWithdrawal) =>
+  wd.rail === 'crypto'
+    ? `Crypto · ${shortAddr(wd.wallet_address)}`
+    : `Bank · ${wd.account_masked || wd.bank || '—'}`
 import {
   Dialog,
   DialogContent,
@@ -42,22 +48,45 @@ function StatusBadge({ status, display }: { status: AdminWithdrawal['status']; d
   )
 }
 
-// ── Stat card ─────────────────────────────────────────────────────────────────
+// ── Per-currency overview card ─────────────────────────────────────────────────
 
-function StatCard({ title, value, isLoading }: { title: string; value: string; isLoading: boolean }) {
+function CurrencyOverview({
+  title,
+  symbol,
+  data,
+  isLoading,
+}: {
+  title: string
+  symbol: '₦' | '$'
+  data?: WithdrawalCurrencyOverview
+  isLoading: boolean
+}) {
+  const fmt = (v?: string) => (symbol === '$' ? formatUsdt(v ?? '0') : formatCurrency(v ?? '0'))
   return (
-    <div
-      className="rounded-2xl px-5 py-4 flex flex-col gap-1"
-      style={{ background: '#0D1836', border: '1px solid #1e2a4a' }}
-    >
-      <p className="text-sm text-muted-foreground">{title}</p>
-      {isLoading ? (
-        <Skeleton className="h-8 w-24 mt-1" />
-      ) : (
-        <p className="text-2xl font-bold" style={{ color: '#C9961A' }}>{value}</p>
-      )}
+    <div className="rounded-2xl px-5 py-4" style={{ background: '#0D1836', border: '1px solid #1e2a4a' }}>
+      <p className="mb-3 text-sm font-semibold text-white">{title}</p>
+      <div className="grid grid-cols-3 gap-2">
+        <div>
+          <p className="text-xs text-muted-foreground">Pending</p>
+          {isLoading ? <Skeleton className="mt-1 h-6 w-16" /> : <p className="text-lg font-bold" style={{ color: '#C9961A' }}>{fmt(data?.total_pending)}</p>}
+        </div>
+        <div>
+          <p className="text-xs text-muted-foreground">Paid</p>
+          {isLoading ? <Skeleton className="mt-1 h-6 w-16" /> : <p className="text-lg font-bold text-white">{fmt(data?.total_paid)}</p>}
+        </div>
+        <div>
+          <p className="text-xs text-muted-foreground">Queued</p>
+          {isLoading ? <Skeleton className="mt-1 h-6 w-10" /> : <p className="text-lg font-bold text-white">{data?.queued ?? 0}</p>}
+        </div>
+      </div>
     </div>
   )
+}
+
+function RailBadge({ rail }: { rail: AdminWithdrawal['rail'] }) {
+  return rail === 'crypto'
+    ? <Badge variant="warning">⛓ Crypto</Badge>
+    : <Badge variant="default">🏦 Bank</Badge>
 }
 
 // ── Approve dialog ────────────────────────────────────────────────────────────
@@ -105,9 +134,9 @@ function ApproveDialog({
           {withdrawal && (
             <div className="space-y-1">
               <p className="text-sm font-semibold text-white">{withdrawal.name}</p>
-              <p className="text-xs text-muted-foreground">{withdrawal.bank} · {withdrawal.account_masked}</p>
+              <p className="text-xs text-muted-foreground">{destLine(withdrawal)}</p>
               <p className="text-xl font-bold mt-1" style={{ color: '#C9961A' }}>
-                {formatCurrency(withdrawal.amount)}
+                {formatMoney(withdrawal.amount, withdrawal.currency)}
               </p>
             </div>
           )}
@@ -240,8 +269,8 @@ function SeeDetailsDialog({
           {withdrawal && (
             <div className="space-y-1 mb-2">
               <p className="text-sm font-semibold text-white">{withdrawal.name}</p>
-              <p className="text-xs text-muted-foreground">{withdrawal.bank} · {withdrawal.account_masked}</p>
-              <p className="text-base font-bold text-red-400">{formatCurrency(withdrawal.amount)}</p>
+              <p className="text-xs text-muted-foreground">{destLine(withdrawal)}</p>
+              <p className="text-base font-bold text-red-400">{formatMoney(withdrawal.amount, withdrawal.currency)}</p>
             </div>
           )}
           <div>
@@ -351,7 +380,7 @@ export function WithdrawalsPage() {
 
   // derive the status filter value from active tab
   const statusFilter = useMemo(() => {
-    if (activeTab === 'pending') return 'pending'
+    if (activeTab === 'pending') return 'pending_review'  // the actionable review queue
     if (activeTab === 'approved') return 'completed'
     return 'rejected'
   }, [activeTab])
@@ -418,23 +447,13 @@ export function WithdrawalsPage() {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
-          <StatCard
-            title="Total Pending"
-            value={overview ? formatCurrency(overview.total_pending) : '—'}
-            isLoading={isLoading}
-          />
-          <StatCard
-            title="Total Paid Out"
-            value={overview ? formatCurrency(overview.total_paid) : '—'}
-            isLoading={isLoading}
-          />
-          <StatCard
-            title="Queued"
-            value={overview ? `${overview.queued}` : '—'}
-            isLoading={isLoading}
-          />
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+          <CurrencyOverview title="NGN · Bank transfers" symbol="₦" data={overview?.ngn} isLoading={isLoading} />
+          <CurrencyOverview title="USDT · Crypto" symbol="$" data={overview?.usdt} isLoading={isLoading} />
         </div>
+        <p className="mt-2 text-xs text-muted-foreground">
+          Total queued: <span className="font-semibold text-foreground">{overview?.queued_total ?? 0}</span>
+        </p>
       </div>
 
       {/* ── Status tabs ── */}
@@ -540,7 +559,7 @@ export function WithdrawalsPage() {
                       )}
                     </div>
                   </th>
-                  {['Name', 'Amount', 'Bank', 'Type', 'Risk', 'Status', 'Requested', 'Action'].map((h) => (
+                  {['Name', 'Amount', 'Destination', 'Type', 'Risk', 'Status', 'Requested', 'Action'].map((h) => (
                     <th
                       key={h}
                       className="px-4 py-3 text-left text-xs font-medium text-muted-foreground whitespace-nowrap"
@@ -601,13 +620,15 @@ export function WithdrawalsPage() {
 
                         {/* Amount */}
                         <td className="px-4 py-3 font-semibold text-sm text-white whitespace-nowrap">
-                          {formatCurrency(wd.amount)}
+                          {formatMoney(wd.amount, wd.currency)}
                         </td>
 
-                        {/* Bank */}
+                        {/* Destination (rail + account/wallet) */}
                         <td className="px-4 py-3">
-                          <p className="text-xs text-foreground">{wd.bank}</p>
-                          <p className="text-xs text-muted-foreground font-mono">{wd.account_masked}</p>
+                          <RailBadge rail={wd.rail} />
+                          <p className="text-xs text-muted-foreground font-mono mt-1">
+                            {wd.rail === 'crypto' ? shortAddr(wd.wallet_address) : (wd.account_masked || '—')}
+                          </p>
                         </td>
 
                         {/* Type */}

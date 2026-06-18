@@ -2,6 +2,7 @@ import { useRef, useState, useEffect } from 'react'
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { LogOut, X } from 'lucide-react'
 import { Sidebar } from './Sidebar'
+import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { useAuthStore } from '@/store/authStore'
 import { authApi } from '@/api/index'
 import { Button } from '@/components/ui/button'
@@ -141,7 +142,9 @@ export function AppShell() {
         {/* Main content */}
         <main className="flex-1 overflow-y-auto">
           <div className="h-full p-6">
-            <Outlet />
+            <ErrorBoundary resetKey={location.pathname}>
+              <Outlet />
+            </ErrorBoundary>
           </div>
         </main>
       </div>
